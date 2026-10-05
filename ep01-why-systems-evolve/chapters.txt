@@ -1,0 +1,12 @@
+0:00 Hook
+1:12 What system design is
+2:25 Stage 1: one server
+3:05 Break #1: traffic
+5:02 Break #2: the database
+7:12 Try it in the lab
+7:57 Break #3: failure
+9:46 Break #4: slow work
+11:12 Break #5: writes
+12:28 Recap
+13:09 Your turn
+13:49 What's next

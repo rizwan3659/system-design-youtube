@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Video 1 · What Is System Design? One App, 100 → 1,000,000 Users</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: fixed 1920x1080 stage scaled to the window; one slide visible; elements with data-step build in on → */
+:root{
+  --bg:#0f1726; --panel:#16213a; --line:#2a3854; --grid:rgba(111,159,255,.06);
+  --ink:#eef2f8; --muted:#9aa8bf; --accent:#6f9fff; --accent-soft:rgba(111,159,255,.16);
+  --marker:#ff7c68; --marker-soft:rgba(255,124,104,.16); --good:#4fc48d; --good-soft:rgba(79,196,141,.16);
+  --warn:#f2b84b; --warn-soft:rgba(242,184,75,.16);
+  --f-display:"Familjen Grotesk","Segoe UI",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",Consolas,monospace;
+  color-scheme:dark;
+}
+html,body{margin:0;height:100%;background:#000;overflow:hidden}
+*{box-sizing:border-box}
+#deck{position:absolute;left:50%;top:50%;width:1920px;height:1080px;transform-origin:center;background:var(--bg);color:var(--ink);font-family:var(--f-body);overflow:hidden;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:48px 48px}
+.slide{position:absolute;inset:0;padding:96px 128px;display:none;flex-direction:column;gap:40px}
+.slide.active{display:flex}
+.notes{display:none}
+[data-step]{transition:opacity .45s ease,transform .45s ease}
+.pending{opacity:0!important;transform:translateY(22px)}
+svg .pending{transform:none}
+@media (prefers-reduced-motion:reduce){[data-step]{transition:none}}
+
+h1,h2,h3{font-family:var(--f-display);margin:0;line-height:1.08;text-wrap:balance}
+h1{font-size:118px;font-weight:700;letter-spacing:-.02em}
+h2{font-size:80px;font-weight:700;letter-spacing:-.015em}
+h3{font-size:48px;font-weight:600}
+p{margin:0}
+.kicker{font-family:var(--f-mono);font-size:30px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.lead{font-size:46px;line-height:1.35;color:var(--muted);max-width:1500px}
+.big{font-size:44px;line-height:1.4}
+.muted{color:var(--muted)}
+.hl{color:var(--warn)}
+.ok{color:var(--good)}
+.bad{color:var(--marker)}
+code,.mono{font-family:var(--f-mono)}
+.row{display:flex;gap:40px;align-items:stretch}
+.col{display:flex;flex-direction:column;gap:28px}
+.card{background:var(--panel);border:2px solid var(--line);border-radius:20px;padding:36px 40px;display:flex;flex-direction:column;gap:18px}
+.card.accent{border-color:var(--accent);background:var(--accent-soft)}
+.card.bad{border-color:var(--marker);background:var(--marker-soft)}
+.card.good{border-color:var(--good);background:var(--good-soft)}
+.card h3{font-size:44px}
+.card p,.card li{font-size:36px;line-height:1.4}
+ul.list{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:26px}
+ul.list li{font-size:44px;line-height:1.3;display:flex;gap:24px;align-items:baseline}
+ul.list li b.n{font-family:var(--f-mono);color:var(--accent);font-weight:500;min-width:56px}
+.tag{display:inline-block;font-family:var(--f-mono);font-size:26px;padding:6px 16px;border-radius:8px;background:var(--accent-soft);color:var(--accent)}
+.tag.red{background:var(--marker-soft);color:var(--marker)} .tag.green{background:var(--good-soft);color:var(--good)} .tag.amber{background:var(--warn-soft);color:var(--warn)}
+.foot{position:absolute;left:128px;right:128px;bottom:56px;display:flex;justify-content:space-between;font-family:var(--f-mono);font-size:24px;color:var(--muted)}
+
+/* step strip */
+.steps5{display:grid;grid-template-columns:repeat(5,1fr);gap:24px}
+.step5{background:var(--panel);border:2px solid var(--line);border-radius:20px;padding:30px 28px;display:flex;flex-direction:column;gap:14px;min-height:340px}
+.step5 .num{font-family:var(--f-mono);font-size:30px;color:var(--accent)}
+.step5 h3{font-size:44px}
+.step5 p{font-size:30px;line-height:1.35;color:var(--muted)}
+.step5 .t{margin-top:auto;font-family:var(--f-mono);font-size:26px;color:var(--warn)}
+.step5.on{border-color:var(--accent);background:var(--accent-soft)}
+
+/* estimate lines */
+.eq{display:grid;grid-template-columns:1fr auto;gap:22px 48px;align-items:baseline;font-size:46px}
+.eq .r{font-family:var(--f-mono);color:var(--warn);text-align:right}
+.eq .l small{color:var(--muted);font-size:32px}
+.callout{border-left:8px solid var(--warn);background:var(--warn-soft);padding:28px 36px;border-radius:0 16px 16px 0;font-size:44px;line-height:1.35}
+.callout.green{border-color:var(--good);background:var(--good-soft)}
+
+/* table */
+table{border-collapse:collapse;width:100%;font-size:36px}
+th,td{text-align:left;padding:22px 26px;border-bottom:2px solid var(--line);vertical-align:top}
+th{font-family:var(--f-mono);font-size:26px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:500}
+td code{font-size:34px;color:var(--accent)}
+
+/* prompt card */
+.prompt{align-self:center;margin-top:60px;background:var(--panel);border:3px solid var(--accent);border-radius:28px;padding:70px 90px;text-align:center;display:flex;flex-direction:column;gap:30px;max-width:1500px}
+.prompt .q{font-family:var(--f-display);font-size:96px;font-weight:700}
+.prompt .url{font-family:var(--f-mono);font-size:40px;color:var(--muted)}
+.prompt .url b{color:var(--good);font-weight:500}
+
+/* architecture diagram */
+.arch svg{width:100%;max-width:1180px;height:auto;display:block;margin:0 auto}
+.caps{display:flex;gap:24px;justify-content:center;flex-wrap:wrap}
+.cap{font-size:34px;padding:16px 28px;border-radius:14px;border:2px solid var(--line);background:var(--panel)}
+.cap.bad{border-color:var(--marker);color:var(--marker)}.cap.good{border-color:var(--good);color:var(--good)}.cap.warn{border-color:var(--warn);color:var(--warn)}
+.arch .node rect{fill:var(--panel);stroke:var(--muted);stroke-width:3}
+.arch .node .nm{fill:var(--ink);font-family:var(--f-display);font-size:34px;font-weight:600;text-anchor:middle}
+.arch .node .sb{fill:var(--muted);font-family:var(--f-body);font-size:24px;text-anchor:middle}
+.arch .edge{stroke:var(--muted);stroke-width:3;fill:none}
+.arch .edge.dash{stroke-dasharray:10 8}
+.arch .ah{fill:var(--muted)}
+.arch .ring rect{fill:none;stroke-width:6}
+.arch .ring.hit rect{stroke:var(--marker);fill:var(--marker-soft)}
+.arch .ring.ok rect{stroke:var(--good);fill:var(--good-soft)}
+.arch .lbl{font-family:var(--f-mono);font-size:28px}
+
+/* chrome (hide with H while recording) */
+#chrome{position:fixed;left:0;right:0;bottom:0;height:5px;background:rgba(255,255,255,.08);z-index:5}
+#chrome i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
+#num{position:fixed;right:14px;bottom:12px;font:13px var(--f-mono);color:#7d8aa3;z-index:5}
+body.clean #chrome,body.clean #num{display:none}
+#help{position:fixed;left:16px;bottom:14px;font:13px var(--f-body);color:#7d8aa3;z-index:5}
+body.clean #help{display:none}
+#black{position:fixed;inset:0;background:#000;display:none;z-index:9}
+body.blank #black{display:block}
+
+/* Video 1 additions: segment banners, metric panels, pause cue, interviewer card, method flow */
+.seg{align-self:flex-start;font-family:var(--f-mono);font-size:30px;letter-spacing:.14em;text-transform:uppercase;padding:12px 26px;border-radius:12px;font-weight:500}
+.seg.red{background:var(--marker);color:#1a0b08}.seg.amber{background:var(--warn);color:#1d1404}.seg.blue{background:var(--accent);color:#08101f}
+.met{display:grid;grid-template-columns:repeat(4,1fr);gap:24px}
+.met>div{background:var(--panel);border:3px solid var(--line);border-radius:20px;padding:28px 32px;display:flex;flex-direction:column;gap:6px}
+.met span{font-size:30px;color:var(--muted)}
+.met b{font-family:var(--f-mono);font-size:68px;font-weight:500}
+.met em{font-style:normal;font-family:var(--f-mono);font-size:26px;color:var(--muted)}
+.met .bad{border-color:var(--marker);background:var(--marker-soft)} .met .bad b,.met .bad em{color:var(--marker)}
+.met .ok{border-color:var(--good)} .met .ok em{color:var(--good)}
+.met .warn{border-color:var(--warn)} .met .warn em{color:var(--warn)}
+.pause{align-self:flex-start;font-family:var(--f-display);font-size:54px;font-weight:600;color:var(--warn);border:3px dashed var(--warn);border-radius:18px;padding:18px 34px}
+.ask{background:#0a0f1a;border:3px solid var(--accent);border-radius:24px;padding:44px 52px;display:flex;flex-direction:column;gap:18px}
+.ask span{font-family:var(--f-mono);font-size:28px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.ask p{font-size:58px;line-height:1.3;font-style:italic}
+.flow{display:flex;flex-wrap:wrap;gap:18px 14px;align-items:center}
+.flow span{font-family:var(--f-display);font-weight:600;font-size:46px;padding:16px 28px;border-radius:16px;background:var(--panel);border:3px solid var(--line)}
+.flow span.red{border-color:var(--marker);color:var(--marker)}.flow span.green{border-color:var(--good);color:var(--good)}.flow span.amber{border-color:var(--warn);color:var(--warn)}.flow span.blue{border-color:var(--accent);color:var(--accent)}
+.flow i{font-style:normal;font-size:44px;color:var(--muted)}
+.arch .lbl{text-anchor:middle;font-weight:500}
+.arch svg{max-width:1560px;max-height:530px}
+.caps.tight{gap:14px;flex-wrap:nowrap}.caps.tight .cap{font-size:30px;padding:14px 20px;white-space:nowrap}
+</style>
+</head>
+<body>
+<div id="deck">
+
+<!-- 1 -->
+<section class="slide" data-chapter="Hook">
+  <span class="kicker">One app · one server · one database</span>
+  <div class="arch" data-arch='{"n":{"client":0,"app":0,"db":0},"lab":{"app":["App server","one machine"],"client":["Users","web + mobile"]},"p":[["M150 305H1175",0,"var(--accent)"]],"l":[["100 req/s",150,215,0,"var(--good)",1],["CPU 5%",770,400,0,"var(--good)",1],["CPU 3%",1175,400,0,"var(--good)",1],["3,000 req/s",150,215,1,"var(--marker)"],["CPU 98%",770,400,1,"var(--marker)"],["CPU 30%",1175,400,1,"var(--good)"]],"hit":{"app":1}}'></div>
+  <div class="caps"><span class="cap bad" data-step="2">Requests now take 3 seconds</span><span class="cap warn" data-step="3">What do you do?</span></div>
+  <aside class="notes">This is the entire backend of a new app. One server, one database. A hundred requests a second. The server's CPU is at five percent. Everything works. [→] Then the app gets featured somewhere, and traffic grows thirty times. Three thousand requests a second. The server's CPU hits ninety-eight percent. [→] Requests that took fifty milliseconds now take three seconds. Users start leaving. [→] So what do you do? Buy a bigger server? Add more servers? Add a cache? Stay with that question for a second, because answering it well is what system design actually is.</aside>
+</section>
+
+<!-- 2 -->
+<section class="slide" style="justify-content:center">
+  <span class="kicker">System Design From Zero · Video 1</span>
+  <h1>What is<br><span class="hl">system design?</span></h1>
+  <p class="lead" data-step="1">One app. 100 → 1,000,000 users.<br>Five times it breaks. Five fixes. Every box earns its place.</p>
+  <aside class="notes">In this video we'll take that one-server app and grow it from a hundred users to a million. [→] It's going to break five times. Each time, we'll find what broke, fix it, and say what the fix costs. By the end, you'll have built the architecture you see in every system design diagram online. The difference is, you'll know why every box is there, because you'll have watched each one become necessary.</aside>
+</section>
+
+<!-- 3 -->
+<section class="slide" data-chapter="What system design is">
+  <span class="kicker">The idea behind the whole series</span>
+  <h2>Not a diagram. A series of decisions.</h2>
+  <div class="row" style="flex:1">
+    <div class="card" data-step="1" style="flex:1"><span><span class="tag">1 · Requirements</span></span><h3>What must it do?</h3><p class="muted">Users, features, and what must never go wrong.</p></div>
+    <div class="card" data-step="2" style="flex:1"><span><span class="tag amber">2 · Numbers</span></span><h3>How much?</h3><p class="muted">Requests per second, data size, latency targets.</p></div>
+    <div class="card accent" data-step="3" style="flex:1"><span><span class="tag green">3 · Trade-offs</span></span><h3>What does it cost?</h3><p class="muted">Every fix creates a new problem.</p></div>
+  </div>
+  <aside class="notes">Here's what system design really is. It's not memorising a diagram. It's a series of decisions. [→] First, requirements. What must the system do, and what must never go wrong? [→] Second, numbers. How many requests a second, how much data, how fast. Without numbers, "it needs to scale" means nothing. [→] And third, trade-offs. Every component you add fixes one problem and creates another. A good engineer can tell you both halves.</aside>
+</section>
+
+<!-- 4 -->
+<section class="slide">
+  <span class="kicker">How every video in this series works</span>
+  <h2>Build it. Break it. Fix it. Explain the cost.</h2>
+  <div class="flow">
+    <span data-step="1">Problem</span><i data-step="1">→</i><span data-step="2">Simple design</span><i data-step="2">→</i><span data-step="3" class="red">Bottleneck</span><i data-step="3">→</i><span data-step="4">Scale</span><i data-step="4">→</i><span data-step="5" class="red">Failure</span><i data-step="5">→</i><span data-step="6" class="green">Improve</span><i data-step="6">→</i><span data-step="7" class="amber">Trade-off</span><i data-step="7">→</i><span data-step="8" class="blue">Interview follow-up</span>
+  </div>
+  <div class="callout" data-step="9">Every new box must answer: <b>What problem? Why does the old design fail? What fixes it? What does the fix break?</b></div>
+  <aside class="notes">And this is the method we'll use in every video on this channel. [→] Start with a problem. [→] Build the simplest design that solves it. [→] Push it until something becomes the bottleneck. [→] Scale the part that's actually failing. [→] Then break it on purpose: kill a server, slow a database. [→] Improve it. [→] Say what the improvement costs. [→] And finish with the question an interviewer would ask next. [→] Every component we add has to answer four questions. What problem do we have? Why does the current design fail? What fixes it? And what new problem does the fix create? Let's start.</aside>
+</section>
+
+<!-- 5 -->
+<section class="slide" data-chapter="Stage 1: one server">
+  <span class="kicker">Stage 1 · Day one · 100 requests per second</span>
+  <h2>Start with the smallest thing that works</h2>
+  <div class="arch" data-arch='{"n":{"client":0,"app":0,"db":0},"lab":{"app":["App server","one machine"],"client":["Users","web + mobile"]},"p":[["M150 305H1175",1,"var(--accent)"]],"l":[["CPU 5%",770,400,2,"var(--good)"],["CPU 3%",1175,400,2,"var(--good)"]]}'></div>
+  <div class="caps"><span class="cap good" data-step="3">Cheap</span><span class="cap good" data-step="3">Easy to debug</span><span class="cap warn" data-step="4">One machine = one point of failure</span></div>
+  <aside class="notes">Stage one. Users, one app server, one database. [→] A request comes in, the server runs some code, reads or writes the database, and answers. [→] At a hundred requests a second, the server is at five percent CPU and the database at three. [→] And this is the right design for day one. It's cheap, it's easy to debug, and plenty of real products never need more. In an interview, starting here is a strength, not a weakness. [→] It does have one obvious risk: everything runs on one machine. Let's see what breaks first.</aside>
+</section>
+
+<!-- 6 -->
+<section class="slide" data-chapter="Break #1: traffic">
+  <div class="seg red">Let's break the system</div>
+  <h2>Traffic × 30. Where is the bottleneck?</h2>
+  <div class="met">
+    <div data-step="1"><span>Traffic</span><b>3,000 req/s</b></div>
+    <div data-step="2" class="bad"><span>App server CPU</span><b>98%</b><em>▲▲ critical</em></div>
+    <div data-step="2" class="ok"><span>Database CPU</span><b>30%</b><em>✓ normal</em></div>
+    <div data-step="3" class="bad"><span>p99 latency</span><b>2.8 s</b><em>▲▲ critical</em></div>
+  </div>
+  <div class="pause" data-step="4">⏸ Pause. Which component is overloaded?</div>
+  <div class="callout green" data-step="5">The <b>app server</b>. The database has plenty of room.</div>
+  <aside class="notes">Let's break the system. Traffic goes up thirty times. [→] Three thousand requests a second. [→] The app server is at ninety-eight percent CPU. The database is at thirty. [→] And the slowest one percent of requests take almost three seconds. [→] Pause for a second. Which component is actually overloaded? [→] The app server. The database is fine. That matters, because anything we do to the database right now would be wasted. In this series, we always find the bottleneck before we change anything.</aside>
+</section>
+
+<!-- 7 -->
+<section class="slide">
+  <div class="seg amber">Why not…?</div>
+  <h2>Bigger server, or more servers?</h2>
+  <div class="row" style="flex:1">
+    <div class="card" data-step="1" style="flex:1"><span><span class="tag amber">Scale up</span></span><h3>One bigger machine</h3><p>✓ No code changes</p><p class="bad">✕ Hard ceiling, rising price</p><p class="bad">✕ Still one point of failure</p></div>
+    <div class="card good" data-step="2" style="flex:1"><span><span class="tag green">Scale out</span></span><h3>Several machines</h3><p>✓ Add more as traffic grows</p><p>✓ One can die, the rest keep serving</p><p class="hl">→ Needs something to spread the traffic</p></div>
+  </div>
+  <aside class="notes">Two options. [→] Scale up: buy a bigger machine. No code changes, and honestly, that's a fine first move. But there's a ceiling, the price climbs fast, and it's still one machine. If it dies, you're down. [→] Scale out: run several smaller servers. You can keep adding them as traffic grows, and if one dies, the others keep going. But now there's a new question: when a request arrives, which server gets it?</aside>
+</section>
+
+<!-- 8 -->
+<section class="slide">
+  <span class="kicker">Stage 2 · Fix: a load balancer</span>
+  <h2>Spread the traffic. Skip dead servers.</h2>
+  <div class="arch" data-arch='{"n":{"client":0,"lb":1,"app":2,"db":0},"lab":{"app":["API servers ×3","stateless"],"client":["Users","web + mobile"]},"p":[["M150 305H1175",3,"var(--accent)"]],"l":[["CPU 35% each",770,400,3,"var(--good)"]]}'></div>
+  <div class="caps"><span class="cap good" data-step="3">CPU 98% → 35%</span><span class="cap warn" data-step="4">Servers must be stateless</span><span class="cap warn" data-step="4">The LB needs a backup</span></div>
+  <aside class="notes">So we add a load balancer. [→] It sits in front and spreads requests across the servers. It also health-checks them, so if one dies, it simply stops sending traffic there. [→] Three API servers instead of one. [→] CPU drops from ninety-eight percent to about thirty-five on each. Latency is back to normal. [→] But here's the cost. Each request can now land on any server, so the servers must be stateless. If you keep a user's login session in one server's memory, the next request might go somewhere else and the user is logged out. Sessions move to a shared store. And the load balancer itself must be redundant, or we've just moved our single point of failure.</aside>
+</section>
+
+<!-- 9 -->
+<section class="slide" data-chapter="Break #2: the database">
+  <div class="seg red">Let's break the system</div>
+  <h2>10,000 req/s. Add more API servers?</h2>
+  <div class="met">
+    <div data-step="1"><span>Traffic</span><b>10,000 req/s</b></div>
+    <div data-step="1" class="ok"><span>API CPU</span><b>45%</b><em>✓ normal</em></div>
+    <div data-step="2" class="bad"><span>Database CPU</span><b>92%</b><em>▲▲ critical</em></div>
+    <div data-step="3"><span>Reads</span><b>95%</b><em>80% hit 5% of data</em></div>
+  </div>
+  <div class="pause" data-step="4">⏸ Would more API servers help?</div>
+  <div class="callout" data-step="5"><b>No.</b> They'd send <i>more</i> queries to the same database.</div>
+  <aside class="notes">Traffic keeps growing. Ten thousand requests a second. [→] The API servers are fine, forty-five percent. [→] But the database is at ninety-two percent. [→] We look closer: ninety-five percent of requests are reads, and most of them read the same small set of popular items. [→] Pause. Would adding more API servers help? [→] No. More API servers would just send even more queries to the same database. The bottleneck moved, so the fix has to move with it.</aside>
+</section>
+
+<!-- 10 -->
+<section class="slide">
+  <div class="seg amber">Why not…?</div>
+  <h2>Three ways to take load off the database</h2>
+  <div class="row" style="flex:1">
+    <div class="card good" data-step="1" style="flex:1"><span><span class="tag green">✓ Cache</span></span><h3>Serve hot reads from memory</h3><p>The same items are read again and again. A small cache absorbs most of them.</p></div>
+    <div class="card" data-step="2" style="flex:1"><span><span class="tag amber">Later · Read replicas</span></span><h3>Copies that serve reads</h3><p>Helps, but every read still runs a query. Hold that thought.</p></div>
+    <div class="card bad" data-step="3" style="flex:1"><span><span class="tag red">✕ Not yet · Sharding</span></span><h3>Split the database</h3><p>Complex, and it doesn't fix repeated reads. Way too early.</p></div>
+  </div>
+  <aside class="notes">We have three options. [→] A cache. The same popular items are read over and over, so keep them in memory and answer without touching the database. [→] Read replicas: copies of the database that serve reads. That would help too, but every read still runs a real query. We'll need replicas soon, for a different reason. [→] And sharding, splitting the database into pieces. Some people jump straight here. But it's complex, and it doesn't fix the actual problem, which is the same rows being read thousands of times. So: a cache.</aside>
+</section>
+
+<!-- 11 -->
+<section class="slide">
+  <span class="kicker">Stage 3 · Fix: a cache</span>
+  <h2>Check memory first. Database only on a miss.</h2>
+  <div class="arch" data-arch='{"n":{"client":0,"lb":0,"app":0,"db":0,"cache":1},"lab":{"app":["API servers ×6","stateless"],"client":["Users","web + mobile"],"cache":["Cache","Redis · hot items"]},"p":[["M150 305H930V115H1175",2,"var(--good)"],["M150 305H1175",3,"var(--warn)"]],"l":[["1. hit: ~1 ms",960,215,2,"var(--good)"],["2. miss → DB",960,400,3,"var(--warn)"],["CPU 92% → 20%",1175,595,4,"var(--good)"]]}'></div>
+  <div class="caps"><span class="cap warn" data-step="5">New problem: stale data</span><span class="cap warn" data-step="5">New problem: a hot key expires → stampede</span></div>
+  <aside class="notes">So we add a cache, something like Redis. [→] Now every read checks the cache first. [→] If the item is there, a cache hit, we answer in about a millisecond and the database never sees it. [→] On a miss, we read the database, and store the result in the cache for next time. [→] Because a few items get most of the traffic, most reads become hits, and database CPU falls from ninety-two percent to around twenty. [→] And the cost? The cache can be out of date. If someone changes a price, the cache might show the old one for a while. And when a very popular key expires, thousands of requests can miss at the same moment and hit the database together. That's called a stampede, and it has its own video in this series.</aside>
+</section>
+
+<!-- 12 -->
+<section class="slide" data-chapter="Try it in the lab">
+  <span class="kicker">Live demo · free interactive course</span>
+  <h2>Same system, live: watch the database turn red</h2>
+  <div class="card accent" style="max-width:1500px"><p class="big">Course → Session 4 → <b>Hard parts</b> → Scaling lab<br><span class="muted mono" style="font-size:32px">rizwan3659.github.io/system-design-interview-course/#s04-m5</span></p></div>
+  <aside class="notes">Let me show you this live. [CUT TO SCREEN RECORDING: follow demo.md, about 45 seconds.] This is the scaling lab from the free course. Simple system, a hundred requests a second, everything green. Push traffic to five thousand. The lab makes me diagnose before I change anything: the API servers are the bottleneck. Add a load balancer and more servers. And look: the moment I fix the API tier, the database turns red. Fix one bottleneck, and the next one appears. Add the cache, and database CPU falls to under twenty percent. You can do exactly this yourself; the link is in the description.</aside>
+</section>
+
+<!-- 13 -->
+<section class="slide" data-chapter="Break #3: failure">
+  <div class="seg red">Let's break the system</div>
+  <h2>The database machine dies.</h2>
+  <div class="arch" data-arch='{"n":{"client":0,"lb":0,"app":0,"db":0,"cache":0},"lab":{"app":["API servers ×6","stateless"],"client":["Users","web + mobile"],"cache":["Cache","Redis · hot items"]},"hit":{"db":1},"ok":{"cache":3}}'></div>
+  <div class="caps"><span class="cap bad" data-step="2">Writes: all fail</span><span class="cap warn" data-step="3">Reads: only cache hits survive</span><span class="cap bad" data-step="4">Data since the last backup: gone</span></div>
+  <aside class="notes">Now let's break it differently. No traffic spike. The database machine just dies. Disk failure, kernel panic, someone deletes the wrong instance. It happens. [→] It's our only copy. [→] Every write fails immediately. [→] Reads that happen to be in the cache still work. Everything else fails. [→] And any data written since the last backup? Gone. The database was a single point of failure, and it was also the only copy of our data.</aside>
+</section>
+
+<!-- 14 -->
+<section class="slide">
+  <span class="kicker">Stage 4 · Fix: replication</span>
+  <h2>Keep a live copy. Promote it on failure.</h2>
+  <div class="arch" data-arch='{"n":{"client":0,"lb":0,"app":0,"db":0,"cache":0,"replica":1},"lab":{"app":["API servers ×6","stateless"],"client":["Users","web + mobile"],"cache":["Cache","Redis · hot items"],"db":["Primary DB","all writes"],"replica":["Read replica","copy · serves reads"]},"p":[["M150 305H930V495H1175",2,"var(--accent)"]],"l":[["replicates",1270,410,1,"var(--muted)"],["reads",960,470,2,"var(--accent)"]]}'></div>
+  <div class="caps"><span class="cap good" data-step="3">Primary dies → promote replica</span><span class="cap warn" data-step="4">New problem: replication lag</span></div>
+  <aside class="notes">The fix is replication. [→] We keep a second database, a replica, that continuously copies every change from the primary. [→] It can serve reads too, which takes even more load off the primary. [→] And if the primary dies, we promote the replica to become the new primary. We're back in seconds to minutes instead of hours. [→] The cost: copying takes time. The replica is usually a few milliseconds behind, sometimes seconds. That has a very visible consequence. Let's see if you can spot it.</aside>
+</section>
+
+<!-- 15 -->
+<section class="slide">
+  <div class="seg blue">Interviewer mode</div>
+  <div class="ask"><span>Interviewer</span><p>"A user updates their profile, refreshes the page, and sees the <b>old</b> profile. Nothing crashed. Why?"</p></div>
+  <div class="pause" data-step="1">⏸ Pause and answer before I do.</div>
+  <div class="callout green" data-step="2">The write went to the <b>primary</b>. The refresh read a <b>replica</b> that hadn't caught up yet: replication lag. Fix: read your own recent writes from the primary.</div>
+  <aside class="notes">Interviewer mode. Here's a question you'll actually get. A user updates their profile, refreshes the page, and sees the old profile. Nothing crashed. Why? [→] Pause the video and answer it. [→] The update went to the primary. The refresh was a read, and reads go to the replica, which hadn't received the change yet. That's replication lag. A common fix: for a few seconds after a user writes something, send that user's reads to the primary. Everyone else can read the replica. If you can explain that in an interview, you're ahead of most candidates.</aside>
+</section>
+
+<!-- 16 -->
+<section class="slide" data-chapter="Break #4: slow work">
+  <div class="seg red">Let's break the system</div>
+  <h2>New feature: every upload takes 8 seconds</h2>
+  <div class="met">
+    <div data-step="1"><span>Image resize per upload</span><b>8 s</b></div>
+    <div data-step="2" class="ok"><span>API CPU</span><b>35%</b><em>✓ normal</em></div>
+    <div data-step="2" class="bad"><span>API worker threads</span><b>100%</b><em>▲▲ all waiting</em></div>
+    <div data-step="3" class="bad"><span>Upload errors</span><b>12%</b><em>▲▲ timeouts</em></div>
+  </div>
+  <div class="pause" data-step="4">⏸ More API servers?</div>
+  <div class="callout" data-step="5">They'd also spend 8 seconds per request <b>waiting</b>. The work is in the wrong place.</div>
+  <aside class="notes">Next, a new requirement. Users can upload photos, and each photo has to be resized into several sizes. [→] That takes eight seconds. And it happens inside the request. [→] Look at this: CPU is only thirty-five percent, but every server thread is busy. They're not working, they're waiting. [→] So uploads start timing out. [→] Do we add more servers? [→] We could, but each new server would also spend eight seconds per upload just waiting. The user doesn't need the resized images instantly. The work is simply in the wrong place.</aside>
+</section>
+
+<!-- 17 -->
+<section class="slide">
+  <span class="kicker">Stage 5 · Fix: a queue and workers</span>
+  <h2>Reply now. Do the slow work in the background.</h2>
+  <div class="arch" data-arch='{"n":{"client":0,"lb":0,"app":0,"db":0,"cache":0,"replica":0,"queue":1,"worker":2},"lab":{"app":["API servers ×8","stateless"],"client":["Users","web + mobile"],"cache":["Cache","Redis · hot items"],"db":["Primary DB","all writes"],"replica":["Read replica","copy · serves reads"],"queue":["Queue","resize jobs"],"worker":["Workers","resize images"]},"p":[["M770 330V515H455",2,"var(--warn)"]],"l":[["reply in ~50 ms",150,215,1,"var(--good)"]]}'></div>
+  <div class="caps"><span class="cap good" data-step="3">Spikes wait in the queue</span><span class="cap warn" data-step="4">New problems: results arrive later · retries · a queue that silently grows</span></div>
+  <aside class="notes">So we split the work. [→] The API saves the upload, puts a small job on a queue, and replies to the user right away, in about fifty milliseconds. [→] Separate workers pull jobs from the queue and resize images at their own pace. [→] If uploads spike, jobs just wait in the queue instead of crashing the servers. And if the queue grows, we add workers. [→] The costs: the resized images appear a few seconds later. A job might fail and be retried, so processing it twice must be safe. And if the workers die, nothing errors. The queue just quietly grows. So we watch how old the oldest job is.</aside>
+</section>
+
+<!-- 18 -->
+<section class="slide" data-chapter="Break #5: writes">
+  <div class="seg red">Let's break the system</div>
+  <h2>100,000 req/s. Add more replicas?</h2>
+  <div class="met">
+    <div data-step="1"><span>Traffic</span><b>100,000 req/s</b></div>
+    <div data-step="2" class="bad"><span>Primary DB CPU</span><b>95%</b><em>▲▲ writes</em></div>
+    <div data-step="2" class="ok"><span>Replica CPU</span><b>12%</b><em>✓ idle</em></div>
+    <div data-step="3" class="warn"><span>Data size</span><b>8 TB</b><em>▲ growing</em></div>
+  </div>
+  <div class="pause" data-step="4">⏸ Would more replicas help?</div>
+  <div class="callout" data-step="5"><b>No.</b> Every replica copies every write. Caches and replicas only help <b>reads</b>.</div>
+  <aside class="notes">A year later. A hundred thousand requests a second. [→] The primary database is at ninety-five percent CPU, and this time it's writes. [→] The replicas are almost idle. [→] And the data has grown to eight terabytes. [→] Would more replicas help? [→] No. Every replica has to apply every single write too. The cache doesn't help either: caches absorb reads. For the first time, one machine simply can't handle the writes.</aside>
+</section>
+
+<!-- 19 -->
+<section class="slide">
+  <span class="kicker">Stage 6 · Fix: sharding (finally)</span>
+  <h2>Split the data across several databases</h2>
+  <div class="arch" data-arch='{"n":{"client":0,"lb":0,"app":0,"db":0,"cache":0,"replica":0,"queue":0,"worker":0},"lab":{"app":["API servers ×40","stateless"],"client":["Users","web + mobile"],"cache":["Cache cluster","Redis"],"db":["DB shards ×4","split by user_id"],"replica":["Replicas","per shard"],"queue":["Queue","resize jobs"],"worker":["Workers","resize images"]},"ok":{"db":1},"l":[]}'></div>
+  <div class="caps"><span class="cap good" data-step="2">Each shard gets ¼ of the writes</span><span class="cap bad" data-step="3">Costs: routing · cross-shard queries · rebalancing · hot shards</span></div>
+  <aside class="notes">Now, and only now, we shard. [→] We split the data across several databases, for example by user ID. Each user's data lives on exactly one shard. [→] With four shards, each one handles roughly a quarter of the writes. [→] And here's why we waited so long. Every query now needs to know which shard to ask. Queries across many users become expensive. Adding a fifth shard means moving data around. And one very popular user can make one shard much hotter than the others. Sharding is powerful, but it's the most expensive step on this list, so you do it when the numbers force you, not before.</aside>
+</section>
+
+<!-- 20 -->
+<section class="slide" data-chapter="Recap">
+  <span class="kicker">Where we ended up</span>
+  <h2>Every box answers a problem</h2>
+  <div class="arch" data-arch='{"n":{"client":0,"lb":0,"app":0,"db":0,"cache":0,"replica":0,"queue":0,"worker":0},"lab":{"app":["API servers","stateless"],"client":["Users","web + mobile"],"cache":["Cache","Redis"],"db":["DB shards","split by user_id"],"replica":["Replicas","per shard"],"queue":["Queue","slow jobs"],"worker":["Workers","background"]},"ok":{"lb":1,"cache":2,"replica":3,"queue":4,"db":5}}'></div>
+  <div class="caps tight"><span class="cap good" data-step="1">LB: CPU maxed</span><span class="cap good" data-step="2">Cache: repeat reads</span><span class="cap good" data-step="3">Replica: one copy</span><span class="cap good" data-step="4">Queue: slow work</span><span class="cap good" data-step="5">Shards: writes</span></div>
+  <aside class="notes">Here's where we ended up. It looks like the diagram you'd find in any system design article. But look at it differently now. [→] The load balancer is here because one server ran out of CPU. [→] The cache, because the same reads hit the database again and again. [→] The replica, because the database was a single point of failure. [→] The queue, because slow work was blocking requests. [→] And the shards, because writes outgrew one machine. Nothing here is decoration. If you can tell this story, you don't need to memorise the diagram. You can rebuild it.</aside>
+</section>
+
+<!-- 21 -->
+<section class="slide" data-chapter="Your turn">
+  <div class="seg blue">Interviewer mode</div>
+  <h2>Traffic grows 10× again. What do you change?</h2>
+  <div class="met">
+    <div class="ok"><span>API CPU</span><b>35%</b><em>✓ normal</em></div>
+    <div class="ok"><span>DB shards CPU</span><b>40%</b><em>✓ normal</em></div>
+    <div class="bad"><span>Redis CPU</span><b>95%</b><em>▲▲ critical</em></div>
+    <div class="ok"><span>Queue age</span><b>2 s</b><em>✓ normal</em></div>
+  </div>
+  <div class="pause" data-step="1">⏸ Pause. Answer in the comments.</div>
+  <div class="callout green" data-step="2">The <b>cache</b> is the bottleneck, not the database. Scale the Redis cluster, and check for one hot key. Don't touch the shards.</div>
+  <aside class="notes">Your turn. Interviewer mode. Traffic grows ten times again. API servers: thirty-five percent. Database shards: forty. Queue: fine. Redis: ninety-five percent. What do you change? [→] Pause and think, or write your answer in the comments. [→] The bottleneck is the cache, so that's what we scale. Add Redis nodes, and check whether one hot key is responsible, because a single key lives on a single node, and adding nodes won't spread it. What you should not do is touch the database. It's at forty percent. Measure first, then change the thing that's actually broken.</aside>
+</section>
+
+<!-- 22 -->
+<section class="slide" data-chapter="What's next" style="justify-content:center">
+  <span class="kicker">Next in System Design From Zero</span>
+  <h2>You've seen what breaks.<br><span class="hl">Now say it in an interview.</span></h2>
+  <div class="card accent" data-step="1" style="max-width:1400px"><span><span class="tag">Video 2</span></span><h3>How to approach any system design interview</h3><p class="muted">45 minutes, a one-line prompt, and an interviewer who keeps changing the requirements.</p></div>
+  <p class="muted mono" data-step="2" style="font-size:30px">Free interactive course: link in the description</p>
+  <aside class="notes">So that's what system design is. Not a diagram, but a story of problems and the decisions that fix them. [→] In an interview, though, you have forty-five minutes, a one-line prompt, and an interviewer who changes the requirements on you. In the next video, I'll show you how to run this same process out loud, step by step, on a real interview question. [→] If you want to try today's system yourself, the scaling lab is in the free interactive course, linked in the description. This channel is a complete system design series, and every video builds on this one. If that's useful to you, subscribe, and I'll see you in the next one.</aside>
+</section>
+
+<div class="foot" id="foot"><span>System Design From Zero · Video 1</span><span></span></div>
+</div>
+
+<div id="chrome"><i></i></div><div id="num"></div>
+<div id="help">→ / Space next · ← back · P presenter notes · H hide bar · B blank · F full screen</div>
+<div id="black"></div>
+
+<script>
+(function(){
+const deck=document.getElementById('deck');
+const fit=()=>{const k=Math.min(innerWidth/1920,innerHeight/1080);deck.style.transform=`translate(-50%,-50%) scale(${k})`};
+addEventListener('resize',fit);fit();
+
+/* architecture diagrams */
+const N={client:[40,250,220,'Client','browser / app'],lb:[330,250,240,'Load balancer','picks a server'],app:[640,250,260,'App servers ×N','stateless'],
+ cache:[1010,60,330,'Cache','hot codes in memory'],db:[1010,250,330,'Database','source of truth'],replica:[1010,440,330,'Read replica','a copy, slightly behind'],
+ queue:[640,460,260,'Queue','click events'],worker:[290,460,300,'Analytics worker','counts in batches']};
+const E=[['client','app','M260 305H640',0,'lb'],['client','lb','M260 305H330'],['lb','app','M570 305H640'],['app','db','M900 305H1010'],['app','cache','M900 280H955V115H1010'],['app','replica','M900 330H955V495H1010'],['db','replica','M1175 360V440',1],['app','queue','M770 360V460'],['queue','worker','M640 515H590']];
+let mk=0;
+document.querySelectorAll('.arch').forEach(el=>{const c=JSON.parse(el.dataset.arch),n=c.n,id='ah'+(mk++);const st=s=>s>0?` data-step="${s}"`:'';let s='';
+ E.forEach(([a,b,d,dash,unless])=>{if(n[a]==null||n[b]==null||(unless&&n[unless]!=null))return;s+=`<path class="edge${dash?' dash':''}" d="${d}" marker-end="url(#${id})"${st(Math.max(n[a],n[b]))}/>`});
+ Object.keys(n).forEach(k=>{const [x,y,w,nm0,sb0]=N[k],[nm,sb]=(c.lab&&c.lab[k])||[nm0,sb0];s+=`<g class="node"${st(n[k])}><rect x="${x}" y="${y}" width="${w}" height="110" rx="16"/><text class="nm" x="${x+w/2}" y="${y+50}">${nm}</text><text class="sb" x="${x+w/2}" y="${y+84}">${sb}</text></g>`});
+ [['hit',c.hit],['ok',c.ok]].forEach(([cls,m])=>{if(!m)return;Object.keys(m).forEach(k=>{const [x,y,w]=N[k];s+=`<g class="ring ${cls}"${st(m[k])}><rect x="${x-6}" y="${y-6}" width="${w+12}" height="122" rx="20"/></g>`})});
+ (c.p||[]).forEach(([d,step,col],i)=>{s+=`<g${st(step)}><circle r="13" fill="${col}"><animateMotion dur="2.2s" begin="${(i*0.35).toFixed(2)}s" repeatCount="indefinite" path="${d}"/></circle></g>`});
+ (c.l||[]).forEach(([t,x,y,step,col,until])=>{s+=`<text class="lbl" x="${x}" y="${y}" fill="${col}"${st(step)}${until?` data-until="${until}"`:''}>${t}</text>`});
+ el.innerHTML=`<svg viewBox="0 0 1380 610" role="img" aria-label="Architecture diagram"><defs><marker id="${id}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="ah" d="M0 0L10 5L0 10z"/></marker></defs>${s}</svg>`});
+
+/* deck state */
+const slides=[...document.querySelectorAll('.slide')];
+const maxStep=s=>Math.max(0,...[...s.querySelectorAll('[data-step]')].map(e=>+e.dataset.step));
+let si=0,st=0,t0=null;
+const words=s=>(s.querySelector('.notes')?.textContent||'').replace(/\[→\]/g,'').trim().split(/\s+/).filter(Boolean).length;
+const WPM=145;let acc=0;const at=slides.map(s=>{const a=acc;acc+=words(s)/WPM*60+2;return a});
+let chapter='';const chap=slides.map(s=>(chapter=s.dataset.chapter||chapter));
+const mmss=x=>Math.floor(x/60)+':'+String(Math.floor(x%60)).padStart(2,'0');
+const h=parseInt(location.hash.slice(1));if(h>0&&h<=slides.length)si=h-1;
+if(/final/.test(location.search)){st=maxStep(slides[si]);document.body.classList.add('clean');document.getElementById('help').remove()}  /* ?final#N previews slide N fully built */
+let notesWin=null;
+function render(){slides.forEach((s,i)=>s.classList.toggle('active',i===si));const s=slides[si];
+ s.querySelectorAll('[data-step]').forEach(e=>e.classList.toggle('pending',+e.dataset.step>st));
+ s.querySelectorAll('[data-until]').forEach(e=>{if(st>=+e.dataset.until)e.classList.add('pending');else if(!e.dataset.step||+e.dataset.step<=st)e.classList.remove('pending')});
+ document.querySelector('#chrome i').style.width=((si+1)/slides.length*100)+'%';
+ document.getElementById('num').textContent=`${si+1}/${slides.length} · build ${st}/${maxStep(s)}`;
+ document.querySelector('#foot span:last-child').textContent=chap[si];
+ try{history.replaceState(null,'','#'+(si+1))}catch(e){}
+ drawNotes()}
+function next(){if(t0==null)t0=Date.now();const m=maxStep(slides[si]);if(st<m)st++;else if(si<slides.length-1){si++;st=0}render()}
+function prev(){if(st>0)st--;else if(si>0){si--;st=maxStep(slides[si])}render()}
+
+/* presenter notes window (P) */
+function drawNotes(){if(!notesWin||notesWin.closed)return;const d=notesWin.document,s=slides[si];
+ const raw=(s.querySelector('.notes')?.innerHTML||'').split('[→]');
+ const html=raw.map((part,i)=>`<span class="${i<st?'done':i===st?'now':'later'}">${part}</span>`).join('<b class="cue">→</b>');
+ d.getElementById('meta').textContent=`Slide ${si+1}/${slides.length} · ${chap[si]} · build ${st}/${maxStep(s)}`;
+ d.getElementById('txt').innerHTML=html;
+ d.getElementById('next').textContent=si<slides.length-1?'Next slide: '+(slides[si+1].querySelector('h1,h2,.q')?.textContent||'').trim():'Last slide';
+ d.getElementById('target').textContent='Target '+mmss(at[si]);}
+function openNotes(){notesWin=window.open('','sd-notes','width=760,height=900');if(!notesWin)return;const d=notesWin.document;d.open();
+ d.write(`<!doctype html><meta charset="utf-8"><title>Presenter notes</title><style>body{margin:0;background:#111;color:#ddd;font:26px/1.55 "IBM Plex Sans",Segoe UI,sans-serif;padding:24px 28px}#meta,#next{font:15px Consolas,monospace;color:#8a96aa}#bar{display:flex;justify-content:space-between;gap:12px;align-items:baseline}#clock{font:30px Consolas,monospace;color:#f2b84b}#target{font:15px Consolas,monospace;color:#8a96aa}.done{color:#666}.now{color:#fff}.later{color:#9aa8bf}.cue{color:#6f9fff;margin:0 6px}#txt{margin:18px 0}</style><div id="bar"><span id="meta"></span><span><span id="clock">0:00</span> <span id="target"></span></span></div><div id="txt"></div><div id="next"></div><p style="font-size:14px;color:#666">Bright text = say now. Blue arrow = press → on the slides window. Keys work here too.</p>`);d.close();
+ d.addEventListener('keydown',key);drawNotes();}
+setInterval(()=>{if(notesWin&&!notesWin.closed&&t0!=null)notesWin.document.getElementById('clock').textContent=mmss((Date.now()-t0)/1000)},500);
+
+function key(e){const k=e.key;
+ if(['ArrowRight','PageDown',' ','Enter'].includes(k)){e.preventDefault();next()}
+ else if(['ArrowLeft','PageUp','Backspace'].includes(k)){e.preventDefault();prev()}
+ else if(k==='Home'){si=0;st=0;render()} else if(k==='End'){si=slides.length-1;st=maxStep(slides[si]);render()}
+ else if(k==='p'||k==='P')openNotes();
+ else if(k==='h'||k==='H')document.body.classList.toggle('clean');
+ else if(k==='b'||k==='B')document.body.classList.toggle('blank');
+ else if(k==='f'||k==='F'){if(!document.fullscreenElement)document.documentElement.requestFullscreen?.().catch(()=>{});else document.exitFullscreen?.()}
+ else if(k==='r'||k==='R'){t0=Date.now()}}
+addEventListener('keydown',key);
+deck.addEventListener('click',next);
+render();
+})();
+</script>
+</body>
+</html>

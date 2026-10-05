@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Video 3 · Functional vs Non-Functional Requirements</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: fixed 1920x1080 stage scaled to the window; one slide visible; elements with data-step build in on → */
+:root{
+  --bg:#0f1726; --panel:#16213a; --line:#2a3854; --grid:rgba(111,159,255,.06);
+  --ink:#eef2f8; --muted:#9aa8bf; --accent:#6f9fff; --accent-soft:rgba(111,159,255,.16);
+  --marker:#ff7c68; --marker-soft:rgba(255,124,104,.16); --good:#4fc48d; --good-soft:rgba(79,196,141,.16);
+  --warn:#f2b84b; --warn-soft:rgba(242,184,75,.16);
+  --f-display:"Familjen Grotesk","Segoe UI",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",Consolas,monospace;
+  color-scheme:dark;
+}
+html,body{margin:0;height:100%;background:#000;overflow:hidden}
+*{box-sizing:border-box}
+#deck{position:absolute;left:50%;top:50%;width:1920px;height:1080px;transform-origin:center;background:var(--bg);color:var(--ink);font-family:var(--f-body);overflow:hidden;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:48px 48px}
+.slide{position:absolute;inset:0;padding:96px 128px;display:none;flex-direction:column;gap:40px}
+.slide.active{display:flex}
+.notes{display:none}
+[data-step]{transition:opacity .45s ease,transform .45s ease}
+.pending{opacity:0!important;transform:translateY(22px)}
+svg .pending{transform:none}
+@media (prefers-reduced-motion:reduce){[data-step]{transition:none}}
+
+h1,h2,h3{font-family:var(--f-display);margin:0;line-height:1.08;text-wrap:balance}
+h1{font-size:118px;font-weight:700;letter-spacing:-.02em}
+h2{font-size:80px;font-weight:700;letter-spacing:-.015em}
+h3{font-size:48px;font-weight:600}
+p{margin:0}
+.kicker{font-family:var(--f-mono);font-size:30px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.lead{font-size:46px;line-height:1.35;color:var(--muted);max-width:1500px}
+.big{font-size:44px;line-height:1.4}
+.muted{color:var(--muted)}
+.hl{color:var(--warn)}
+.ok{color:var(--good)}
+.bad{color:var(--marker)}
+code,.mono{font-family:var(--f-mono)}
+.row{display:flex;gap:40px;align-items:stretch}
+.col{display:flex;flex-direction:column;gap:28px}
+.card{background:var(--panel);border:2px solid var(--line);border-radius:20px;padding:36px 40px;display:flex;flex-direction:column;gap:18px}
+.card.accent{border-color:var(--accent);background:var(--accent-soft)}
+.card.bad{border-color:var(--marker);background:var(--marker-soft)}
+.card.good{border-color:var(--good);background:var(--good-soft)}
+.card h3{font-size:44px}
+.card p,.card li{font-size:36px;line-height:1.4}
+ul.list{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:26px}
+ul.list li{font-size:44px;line-height:1.3;display:flex;gap:24px;align-items:baseline}
+ul.list li b.n{font-family:var(--f-mono);color:var(--accent);font-weight:500;min-width:56px}
+.tag{display:inline-block;font-family:var(--f-mono);font-size:26px;padding:6px 16px;border-radius:8px;background:var(--accent-soft);color:var(--accent)}
+.tag.red{background:var(--marker-soft);color:var(--marker)} .tag.green{background:var(--good-soft);color:var(--good)} .tag.amber{background:var(--warn-soft);color:var(--warn)}
+.foot{position:absolute;left:128px;right:128px;bottom:56px;display:flex;justify-content:space-between;font-family:var(--f-mono);font-size:24px;color:var(--muted)}
+
+/* step strip */
+.steps5{display:grid;grid-template-columns:repeat(5,1fr);gap:24px}
+.step5{background:var(--panel);border:2px solid var(--line);border-radius:20px;padding:30px 28px;display:flex;flex-direction:column;gap:14px;min-height:340px}
+.step5 .num{font-family:var(--f-mono);font-size:30px;color:var(--accent)}
+.step5 h3{font-size:44px}
+.step5 p{font-size:30px;line-height:1.35;color:var(--muted)}
+.step5 .t{margin-top:auto;font-family:var(--f-mono);font-size:26px;color:var(--warn)}
+.step5.on{border-color:var(--accent);background:var(--accent-soft)}
+
+/* estimate lines */
+.eq{display:grid;grid-template-columns:1fr auto;gap:22px 48px;align-items:baseline;font-size:46px}
+.eq .r{font-family:var(--f-mono);color:var(--warn);text-align:right}
+.eq .l small{color:var(--muted);font-size:32px}
+.callout{border-left:8px solid var(--warn);background:var(--warn-soft);padding:28px 36px;border-radius:0 16px 16px 0;font-size:44px;line-height:1.35}
+.callout.green{border-color:var(--good);background:var(--good-soft)}
+
+/* table */
+table{border-collapse:collapse;width:100%;font-size:36px}
+th,td{text-align:left;padding:22px 26px;border-bottom:2px solid var(--line);vertical-align:top}
+th{font-family:var(--f-mono);font-size:26px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:500}
+td code{font-size:34px;color:var(--accent)}
+
+/* prompt card */
+.prompt{align-self:center;margin-top:60px;background:var(--panel);border:3px solid var(--accent);border-radius:28px;padding:70px 90px;text-align:center;display:flex;flex-direction:column;gap:30px;max-width:1500px}
+.prompt .q{font-family:var(--f-display);font-size:96px;font-weight:700}
+.prompt .url{font-family:var(--f-mono);font-size:40px;color:var(--muted)}
+.prompt .url b{color:var(--good);font-weight:500}
+
+/* architecture diagram */
+.arch svg{width:100%;max-width:1180px;height:auto;display:block;margin:0 auto}
+.caps{display:flex;gap:24px;justify-content:center;flex-wrap:wrap}
+.cap{font-size:34px;padding:16px 28px;border-radius:14px;border:2px solid var(--line);background:var(--panel)}
+.cap.bad{border-color:var(--marker);color:var(--marker)}.cap.good{border-color:var(--good);color:var(--good)}.cap.warn{border-color:var(--warn);color:var(--warn)}
+.arch .node rect{fill:var(--panel);stroke:var(--muted);stroke-width:3}
+.arch .node .nm{fill:var(--ink);font-family:var(--f-display);font-size:34px;font-weight:600;text-anchor:middle}
+.arch .node .sb{fill:var(--muted);font-family:var(--f-body);font-size:24px;text-anchor:middle}
+.arch .edge{stroke:var(--muted);stroke-width:3;fill:none}
+.arch .edge.dash{stroke-dasharray:10 8}
+.arch .ah{fill:var(--muted)}
+.arch .ring rect{fill:none;stroke-width:6}
+.arch .ring.hit rect{stroke:var(--marker);fill:var(--marker-soft)}
+.arch .ring.ok rect{stroke:var(--good);fill:var(--good-soft)}
+.arch .lbl{font-family:var(--f-mono);font-size:28px}
+
+/* chrome (hide with H while recording) */
+#chrome{position:fixed;left:0;right:0;bottom:0;height:5px;background:rgba(255,255,255,.08);z-index:5}
+#chrome i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
+#num{position:fixed;right:14px;bottom:12px;font:13px var(--f-mono);color:#7d8aa3;z-index:5}
+body.clean #chrome,body.clean #num{display:none}
+#help{position:fixed;left:16px;bottom:14px;font:13px var(--f-body);color:#7d8aa3;z-index:5}
+body.clean #help{display:none}
+#black{position:fixed;inset:0;background:#000;display:none;z-index:9}
+body.blank #black{display:block}
+
+/* Video 1 additions: segment banners, metric panels, pause cue, interviewer card, method flow */
+.seg{align-self:flex-start;font-family:var(--f-mono);font-size:30px;letter-spacing:.14em;text-transform:uppercase;padding:12px 26px;border-radius:12px;font-weight:500}
+.seg.red{background:var(--marker);color:#1a0b08}.seg.amber{background:var(--warn);color:#1d1404}.seg.blue{background:var(--accent);color:#08101f}
+.met{display:grid;grid-template-columns:repeat(4,1fr);gap:24px}
+.met>div{background:var(--panel);border:3px solid var(--line);border-radius:20px;padding:28px 32px;display:flex;flex-direction:column;gap:6px}
+.met span{font-size:30px;color:var(--muted)}
+.met b{font-family:var(--f-mono);font-size:68px;font-weight:500}
+.met em{font-style:normal;font-family:var(--f-mono);font-size:26px;color:var(--muted)}
+.met .bad{border-color:var(--marker);background:var(--marker-soft)} .met .bad b,.met .bad em{color:var(--marker)}
+.met .ok{border-color:var(--good)} .met .ok em{color:var(--good)}
+.met .warn{border-color:var(--warn)} .met .warn em{color:var(--warn)}
+.pause{align-self:flex-start;font-family:var(--f-display);font-size:54px;font-weight:600;color:var(--warn);border:3px dashed var(--warn);border-radius:18px;padding:18px 34px}
+.ask{background:#0a0f1a;border:3px solid var(--accent);border-radius:24px;padding:44px 52px;display:flex;flex-direction:column;gap:18px}
+.ask span{font-family:var(--f-mono);font-size:28px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.ask p{font-size:58px;line-height:1.3;font-style:italic}
+.flow{display:flex;flex-wrap:wrap;gap:18px 14px;align-items:center}
+.flow span{font-family:var(--f-display);font-weight:600;font-size:46px;padding:16px 28px;border-radius:16px;background:var(--panel);border:3px solid var(--line)}
+.flow span.red{border-color:var(--marker);color:var(--marker)}.flow span.green{border-color:var(--good);color:var(--good)}.flow span.amber{border-color:var(--warn);color:var(--warn)}.flow span.blue{border-color:var(--accent);color:var(--accent)}
+.flow i{font-style:normal;font-size:44px;color:var(--muted)}
+.arch .lbl{text-anchor:middle;font-weight:500}
+.arch svg{max-width:1560px;max-height:530px}
+.caps.tight{gap:14px;flex-wrap:nowrap}.caps.tight .cap{font-size:30px;padding:14px 20px;white-space:nowrap}
+</style>
+</head>
+<body>
+<div id="deck">
+
+<!-- 1 -->
+<section class="slide" data-chapter="Hook">
+  <span class="kicker">Same prompt: "Design a photo-sharing app"</span>
+  <h2>Two engineers. Two very different designs.</h2>
+  <div class="row" style="flex:1">
+    <div class="card" data-step="1" style="flex:1"><span><span class="tag">Design A · 3 boxes</span></span><p class="mono" style="font-size:36px;line-height:1.8">Users → Server → Database</p></div>
+    <div class="card" data-step="2" style="flex:1"><span><span class="tag amber">Design B · 9 boxes</span></span><p class="mono" style="font-size:30px;line-height:1.6">Load balancer · API servers · cache ·<br>replica · queue · email worker ·<br>object storage · CDN · database</p></div>
+  </div>
+  <div class="callout green" data-step="3">Both are correct.</div>
+  <div class="pause" data-step="4">The difference: five sentences the interviewer said.</div>
+  <aside class="notes">Two engineers get the same prompt: design a photo-sharing app. [→] The first one draws three boxes. Users, one server, one database. [→] The second one draws nine. Load balancer, API servers, a cache, a replica, a queue, an email worker, object storage, a CDN. [→] Here's the thing: both designs are correct. [→] The difference isn't skill. It's five sentences the interviewer said, or didn't say. By the end of this video, you'll be able to hear a requirement and know which box it adds.</aside>
+</section>
+
+<!-- 2 -->
+<section class="slide" style="justify-content:center">
+  <span class="kicker">System Design From Zero · Video 3</span>
+  <h1>Requirements decide<br><span class="hl">the architecture</span></h1>
+  <p class="lead" data-step="1">Functional vs non-functional, five requirements that each add a box,<br>and the one question most candidates forget.</p>
+  <aside class="notes">This video is about requirements: the first step of every system design interview, and the step most people rush. [→] We'll split requirements into two kinds, watch five sentences turn a three-box design into a nine-box one, and then look at the one question that most candidates forget to ask, even though it changes how they should design everything else.</aside>
+</section>
+
+<!-- 3 -->
+<section class="slide" data-chapter="Two kinds of requirements">
+  <span class="kicker">Two kinds of requirements</span>
+  <h2>What it does vs how well it does it</h2>
+  <div class="row" style="flex:1">
+    <div class="card" data-step="1" style="flex:1"><span><span class="tag">Functional</span></span><h3>What the system does</h3><p>Post a photo · follow someone · see a feed</p><p class="hl">→ becomes your API</p></div>
+    <div class="card accent" data-step="2" style="flex:1"><span><span class="tag amber">Non-functional</span></span><h3>How well it does it</h3><p>Scale · latency · availability · durability · consistency</p><p class="hl">→ becomes your architecture</p></div>
+  </div>
+  <div class="callout" data-step="3">Functional requirements give you <b>endpoints</b>. Non-functional requirements give you <b>boxes</b>.</div>
+  <aside class="notes">Requirements come in two kinds. [→] Functional requirements say what the system does. Users can post a photo. Users can follow someone. Users see a feed. These turn into your API. [→] Non-functional requirements say how well it must do it. How many users, how fast, how often it can be down, whether data can ever be lost, how fresh the data must be. [→] And here's the rule that makes this useful: functional requirements give you endpoints. Non-functional requirements give you boxes. Almost every component in a design exists because of a non-functional requirement.</aside>
+</section>
+
+<!-- 4 -->
+<section class="slide">
+  <div class="seg blue">Quick check</div>
+  <h2>Functional or non-functional?</h2>
+  <ul class="list">
+    <li><b class="n">1</b><span>"Users can follow other users." <span class="tag" data-step="2">Functional</span></span></li>
+    <li><b class="n">2</b><span>"The feed loads in under 300 ms." <span class="tag amber" data-step="3">Non-functional · latency</span></span></li>
+    <li><b class="n">3</b><span>"A photo is never lost." <span class="tag amber" data-step="4">Non-functional · durability</span></span></li>
+    <li><b class="n">4</b><span>"Riders see the driver move on a map." <span class="tag" data-step="5">Functional + a hidden one: updates every few seconds</span></span></li>
+  </ul>
+  <div class="pause" data-step="1">⏸ Pause and sort them.</div>
+  <aside class="notes">Quick check. Four sentences. Functional or non-functional? [→] Pause and sort them. [→] One: users can follow other users. Functional. It's an action, so it becomes an endpoint. [→] Two: the feed loads in under three hundred milliseconds. Non-functional. That's latency, and it will push us toward caching. [→] Three: a photo is never lost. Non-functional. That's durability. [→] And four, the tricky one: riders see the driver move on a map. That's a feature, so functional. But it hides a non-functional requirement: the location has to update every few seconds. Good candidates pull those hidden requirements out loud.</aside>
+</section>
+
+<!-- 5 -->
+<section class="slide" data-chapter="Start simple">
+  <span class="kicker">Functional requirements only</span>
+  <h2>They give you the API, not the architecture</h2>
+  <div class="card" style="max-width:1400px">
+    <p class="mono" data-step="1" style="font-size:40px">POST /photos <span class="muted">→ upload a photo</span></p>
+    <p class="mono" data-step="2" style="font-size:40px">POST /users/{id}/follow <span class="muted">→ follow someone</span></p>
+    <p class="mono" data-step="3" style="font-size:40px">GET /feed?cursor=… <span class="muted">→ see the feed</span></p>
+  </div>
+  <div class="callout" data-step="4">Nothing here tells you how many servers you need.</div>
+  <aside class="notes">Let's start with only the functional requirements. They give us three endpoints. [→] Post a photo. [→] Follow someone. [→] Get the feed, one page at a time. [→] Now notice what's missing. Nothing here tells you how many servers you need, whether you need a cache, or what happens if a machine dies. With only functional requirements, the honest design is the simplest one.</aside>
+</section>
+
+<!-- 6 -->
+<section class="slide">
+  <span class="kicker">Design A · the honest starting point</span>
+  <h2>Users → one server → one database</h2>
+  <div class="arch" data-arch='{"n":{"client":0,"app":0,"db":0},"lab":{"client":["Users","web + mobile"],"app":["App server","one machine"],"db":["Database","photos + posts"]},"p":[["M150 305H1175",0,"var(--accent)"]]}'></div>
+  <div class="caps"><span class="cap good" data-step="1">Fine for thousands of users</span><span class="cap good" data-step="2">Cheap · simple · easy to debug</span></div>
+  <aside class="notes">So here's design A. Users, one app server, one database. [→] For a few thousand users, this is completely fine. [→] It's cheap, it's simple, and it's easy to debug. Now let's add the interviewer's five sentences, one at a time, and watch what each one forces us to add.</aside>
+</section>
+
+<!-- 7 -->
+<section class="slide" data-chapter="#1: 10 million users">
+  <div class="seg amber">New requirement</div>
+  <h2>"10 million daily users."</h2>
+  <div class="met">
+    <div data-step="1"><span>Requests per day</span><b>200 M</b><em>10 M × 20 each</em></div>
+    <div data-step="2"><span>Average</span><b>2,300/s</b><em>÷ 86,400 s</em></div>
+    <div data-step="3" class="warn"><span>Peak</span><b>~7,000/s</b><em>× 3</em></div>
+    <div data-step="4" class="bad"><span>One server</span><b>~2,000/s</b><em>▲▲ not enough</em></div>
+  </div>
+  <div class="pause" data-step="5">⏸ Can one server handle this?</div>
+  <aside class="notes">Sentence one: ten million daily users. Big isn't a number, so let's make it one. [→] If each user makes about twenty requests a day, that's two hundred million requests a day. [→] Divide by the seconds in a day, about eighty-six thousand, and you get roughly two thousand three hundred requests per second on average. [→] Traffic isn't flat, so plan for a peak around three times that: about seven thousand a second. [→] A typical app server handles a couple of thousand simple requests a second. [→] So can one server handle this? Not even close.</aside>
+</section>
+
+<!-- 8 -->
+<section class="slide">
+  <span class="kicker">Requirement #1 adds: load balancer + more servers</span>
+  <h2>Scale → spread the traffic</h2>
+  <div class="arch" data-arch='{"n":{"client":0,"lb":1,"app":2,"db":0},"lab":{"client":["Users","10 M a day"],"app":["API servers ×5","stateless"],"db":["Database","photos + posts"]},"p":[["M150 305H1175",3,"var(--accent)"]],"l":[["~1,400/s each at peak",770,400,3,"var(--good)"]]}'></div>
+  <div class="caps"><span class="cap good" data-step="3">Why: one server can't keep up</span><span class="cap warn" data-step="4">Cost: servers must be stateless</span></div>
+  <aside class="notes">So requirement one adds a load balancer [→] and several stateless API servers behind it. [→] Five servers, each handling around fourteen hundred requests a second at peak, with room to spare. [→] Why? Because one server can't keep up. [→] The cost: any request can land on any server, so no server can keep user state in memory. Why not just buy one huge server? You could, for a while. But it has a ceiling, and it's still a single machine that can die.</aside>
+</section>
+
+<!-- 9 -->
+<section class="slide" data-chapter="#2: fast reads">
+  <div class="seg amber">New requirement</div>
+  <h2>"The feed loads in under 300 ms.<br>Reads are 100× writes."</h2>
+  <div class="caps"><span class="cap bad" data-step="1">Every feed = several database queries</span><span class="cap warn" data-step="2">The same popular posts are read again and again</span></div>
+  <aside class="notes">Sentence two: the feed must load in under three hundred milliseconds, and people read a hundred times more than they post. [→] Every feed request means several database queries. At seven thousand requests a second, that's tens of thousands of queries a second on one database. [→] But most of those reads ask for the same popular posts, over and over. When the same data is read again and again, that's a requirement asking for a cache.</aside>
+</section>
+
+<!-- 10 -->
+<section class="slide">
+  <span class="kicker">Requirement #2 adds: a cache</span>
+  <h2>Read-heavy + fast → serve from memory</h2>
+  <div class="arch" data-arch='{"n":{"client":0,"lb":0,"app":0,"db":0,"cache":1},"lab":{"client":["Users","10 M a day"],"app":["API servers ×5","stateless"],"db":["Database","misses only"],"cache":["Cache","hot feeds + posts"]},"p":[["M150 305H930V115H1175",2,"var(--good)"],["M150 305H1175",3,"var(--warn)"]],"l":[["hit: ~1 ms",960,215,2,"var(--good)"],["miss → database",960,400,3,"var(--warn)"]]}'></div>
+  <div class="caps"><span class="cap good" data-step="4">Most feeds come from memory</span><span class="cap warn" data-step="5">Cost: a new post can appear a few seconds late</span></div>
+  <aside class="notes">Requirement two adds a cache. [→] The feed service checks the cache first. [→] If the feed is there, it comes back in about a millisecond. [→] Only on a miss do we go to the database. [→] Because most reads are for the same popular content, most requests never touch the database, and the three-hundred-millisecond target is easy. [→] The cost: cached data can be slightly old. A new post might take a few seconds to show up in other people's feeds. And whether that's acceptable is, again, a requirement.</aside>
+</section>
+
+<!-- 11 -->
+<section class="slide">
+  <div class="seg blue">Interviewer mode</div>
+  <div class="ask"><span>Interviewer</span><p>"Actually, a new post must appear in everyone's feed <b>instantly</b>."</p></div>
+  <div class="pause" data-step="1">⏸ What changes?</div>
+  <div class="callout green" data-step="2">That's a <b>consistency</b> requirement, and it makes caching expensive. Ask first: instant for <b>everyone</b>, or just for <b>the person who posted</b>? Usually the second, and that's cheap.</div>
+  <aside class="notes">Interviewer mode. The interviewer pushes back: actually, a new post must appear in everyone's feed instantly. [→] What changes? [→] That's a consistency requirement, and it makes caching much harder: every post would invalidate thousands of cached feeds. So first, ask: instant for everyone, or just for the person who posted? Usually it's the author who must see it immediately. That's cheap: show the author their own post from the database, and let everyone else get it a few seconds later. One question just saved you an expensive design.</aside>
+</section>
+
+<!-- 12 -->
+<section class="slide" data-chapter="#3: never lose data">
+  <div class="seg amber">New requirement</div>
+  <h2>"A photo is never lost."</h2>
+  <div class="arch" data-arch='{"n":{"client":0,"lb":0,"app":0,"db":0,"cache":0,"replica":2},"lab":{"client":["Users","10 M a day"],"app":["API servers ×5","stateless"],"db":["Primary DB","the only copy?"],"cache":["Cache","hot feeds + posts"],"replica":["Replica + backups","second copy"]},"hit":{"db":1},"ok":{"replica":2},"l":[["copies every write",1270,410,2,"var(--muted)"]]}'></div>
+  <div class="caps tight"><span class="cap bad" data-step="1">One copy = one failure from loss</span><span class="cap good" data-step="3">Durability → more copies</span><span class="cap warn" data-step="4">Cost: lag, a second machine</span></div>
+  <aside class="notes">Sentence three: a photo is never lost once the upload succeeds. [→] Right now, our database is the only copy. One disk failure, one bad command, and data is gone. [→] So durability adds a replica: a second database on another machine that copies every write, plus regular backups. [→] Durability always means copies, on different machines, ideally in different places. [→] The cost: a second machine, and the replica runs slightly behind the primary. Notice that this requirement has nothing to do with scale. Even an app with a hundred users needs this if the data must never be lost.</aside>
+</section>
+
+<!-- 13 -->
+<section class="slide" data-chapter="#4: a 'simple' feature">
+  <div class="seg amber">New requirement</div>
+  <h2>"Send a welcome email when someone signs up."</h2>
+  <div class="pause" data-step="1">⏸ Where should the email be sent from?</div>
+  <div class="card bad" data-step="2"><h3>Inside the sign-up request?</h3><p>The email provider takes 10 s → sign-up takes 10 s.<br>The provider is down → sign-up fails.</p></div>
+  <aside class="notes">Sentence four sounds like a tiny feature: send a welcome email when someone signs up. [→] Where should that email be sent from? [→] The obvious answer is inside the sign-up request. But email providers are slow and sometimes down. If the provider takes ten seconds, your sign-up takes ten seconds. If the provider is down, nobody can sign up, for a feature they don't even need right now. A functional requirement just created a non-functional problem.</aside>
+</section>
+
+<!-- 14 -->
+<section class="slide">
+  <span class="kicker">Requirement #4 adds: a queue + a worker</span>
+  <h2>Work the user doesn't wait for → do it later</h2>
+  <div class="arch" data-arch='{"n":{"client":0,"lb":0,"app":0,"db":0,"cache":0,"replica":0,"queue":1,"worker":2},"lab":{"client":["Users","10 M a day"],"app":["API servers ×5","stateless"],"db":["Primary DB","writes"],"cache":["Cache","hot feeds + posts"],"replica":["Replica + backups","second copy"],"queue":["Queue","jobs for later"],"worker":["Email worker","retries"]},"p":[["M770 330V515H455",2,"var(--warn)"]],"l":[["sign-up returns at once",150,215,3,"var(--good)"]]}'></div>
+  <div class="caps"><span class="cap good" data-step="3">Provider slow or down → sign-up still works</span><span class="cap warn" data-step="4">Cost: the email arrives a little later</span></div>
+  <aside class="notes">So requirement four adds a queue. [→] Sign-up saves the user and drops a small "send welcome email" job on the queue. [→] An email worker picks it up and sends it, retrying if the provider fails. [→] Sign-up now returns immediately, whether the provider is fast, slow or down. [→] The cost: the email arrives a few seconds later, and the worker needs monitoring. The rule: if the user doesn't need to wait for it, it probably doesn't belong in the request.</aside>
+</section>
+
+<!-- 15 -->
+<section class="slide" data-chapter="#5: photos worldwide">
+  <div class="seg amber">New requirement</div>
+  <h2>"Photos and videos. Users worldwide."</h2>
+  <div class="arch" data-arch='{"n":{"client":0,"lb":0,"app":0,"db":0,"cache":0,"replica":0,"queue":0,"worker":0,"obj":1,"cdn":2},"lab":{"client":["Users","worldwide"],"app":["API servers ×5","stateless"],"db":["Primary DB","metadata"],"cache":["Cache","hot feeds + posts"],"replica":["Replica + backups","second copy"],"queue":["Queue","jobs for later"],"worker":["Email worker","retries"]},"p":[["M150 250V115H450",2,"var(--good)"]]}'></div>
+  <div class="caps tight"><span class="cap good" data-step="3">Bytes → object storage</span><span class="cap good" data-step="3">Served near the viewer</span><span class="cap warn" data-step="4">Cost: CDN bills, purging</span></div>
+  <aside class="notes">Sentence five: users upload photos and videos, and they're all over the world. [→] Photos and videos are big, so they go to object storage: cheap, huge, and it keeps several copies of every file. The database keeps only the metadata: who uploaded what, and where. [→] And because viewers are worldwide, a CDN serves those files from servers near each viewer, pulling from object storage only once. [→] So the bytes never touch our database, and far-away viewers don't wait on a round trip across the world. [→] The cost: CDN bandwidth bills, and when a file changes, purging old copies from the edge.</aside>
+</section>
+
+<!-- 16 -->
+<section class="slide" data-chapter="Recap: sentences → boxes">
+  <span class="kicker">Five sentences. Six new boxes.</span>
+  <h2>Every box points back to a requirement</h2>
+  <table>
+    <thead><tr><th>The interviewer said</th><th>Kind</th><th>So we added</th></tr></thead>
+    <tbody>
+      <tr data-step="1"><td>"10 million daily users"</td><td>Scale</td><td><b>Load balancer + servers</b></td></tr>
+      <tr data-step="2"><td>"Feed under 300 ms, reads 100× writes"</td><td>Latency</td><td><b>Cache</b></td></tr>
+      <tr data-step="3"><td>"A photo is never lost"</td><td>Durability</td><td><b>Replica + backups</b></td></tr>
+      <tr data-step="4"><td>"Send a welcome email"</td><td>Hidden: availability</td><td><b>Queue + worker</b></td></tr>
+      <tr data-step="5"><td>"Photos and videos, worldwide"</td><td>Size + distance</td><td><b>Object storage + CDN</b></td></tr>
+    </tbody>
+  </table>
+  <aside class="notes">Let's line it up. Five sentences, and every new box points back to one of them. [→] Ten million daily users: scale, so a load balancer and more servers. [→] A fast, read-heavy feed: latency, so a cache. [→] Photos are never lost: durability, so a replica and backups. [→] A welcome email: it looked functional, but it hid an availability problem, so a queue and a worker. [→] Photos and videos worldwide: size and distance, so object storage and a CDN. That's how design B got nine boxes, and why design A, with none of these sentences, was also right.</aside>
+</section>
+
+<!-- 17 -->
+<section class="slide" data-chapter="The never-happen rule">
+  <span class="kicker">The question most candidates forget</span>
+  <div class="ask"><span>Ask this every time</span><p>"What must <b>never</b> go wrong?"</p></div>
+  <div class="row">
+    <div class="card" style="flex:1"><h3>Bank transfers</h3><p class="bad" data-step="2">Money created or lost</p></div>
+    <div class="card" style="flex:1"><h3>Concert tickets</h3><p class="bad" data-step="3">Same seat sold twice</p></div>
+    <div class="card" style="flex:1"><h3>Chat app</h3><p class="bad" data-step="4">A "sent" message is lost</p></div>
+    <div class="card" style="flex:1"><h3>URL shortener</h3><p class="bad" data-step="5">Link goes to the wrong URL</p></div>
+  </div>
+  <div class="pause" data-step="1">⏸ Name the never-happen rule for each.</div>
+  <aside class="notes">Now the question most candidates forget: what must never go wrong? Every system has one failure the business simply cannot accept. I call it the never-happen rule. [→] Pause, and name it for each of these four. [→] Bank transfers: money is created or lost. A debit without its matching credit. [→] Concert tickets: the same seat sold to two people. [→] A chat app: a message the sender saw as sent is lost. [→] A URL shortener: a short link sends someone to the wrong place.</aside>
+</section>
+
+<!-- 18 -->
+<section class="slide">
+  <span class="kicker">Why the never-happen rule matters</span>
+  <h2>Strict where it matters. Relaxed everywhere else.</h2>
+  <div class="row" style="flex:1">
+    <div class="card bad" data-step="1" style="flex:1"><span><span class="tag red">The never-happen part</span></span><h3>Strong guarantees</h3><p>Transactions · conditional updates · idempotency · read from the source of truth</p></div>
+    <div class="card good" data-step="2" style="flex:1"><span><span class="tag green">Everything else</span></span><h3>Cheap and fast</h3><p>Caches · a few seconds of staleness · eventual consistency · retry later</p></div>
+  </div>
+  <div class="callout" data-step="3">It tells you where to spend your expensive guarantees, and where you can save.</div>
+  <aside class="notes">Why does this matter so much? [→] Because it tells you which small part of the system needs the expensive guarantees: transactions, conditional updates, idempotency keys, always reading from the source of truth. [→] And it tells you that everything else can be cheap and fast: cached, a few seconds stale, eventually consistent. For tickets, the seat map can be a little stale. The purchase itself never can. [→] Skip this question, and you either make everything strict and slow, or everything fast and miss the one bug that matters.</aside>
+</section>
+
+<!-- 19 -->
+<section class="slide" data-chapter="Ask or skip?">
+  <div class="seg blue">Quick check</div>
+  <h2>"Design a chat app." Ask it, or skip it?</h2>
+  <ul class="list">
+    <li><b class="n">1</b><span>"One-to-one, groups, or both?" <span class="tag green" data-step="2">Ask · changes fan-out and storage</span></span></li>
+    <li><b class="n">2</b><span>"Kafka or RabbitMQ?" <span class="tag red" data-step="3">Skip · a tool before the problem</span></span></li>
+    <li><b class="n">3</b><span>"How many daily users, and messages each?" <span class="tag green" data-step="4">Ask · decides one server vs many</span></span></li>
+    <li><b class="n">4</b><span>"Can I build it as microservices?" <span class="tag red" data-step="5">Skip · a solution, not a requirement</span></span></li>
+  </ul>
+  <div class="pause" data-step="1">⏸ Ask or skip?</div>
+  <aside class="notes">One more quick check. The prompt is: design a chat app. Would a strong candidate ask these questions in the first five minutes? [→] Pause and decide. [→] One-to-one, groups, or both? Ask. Groups change how messages fan out and are stored. [→] Kafka or RabbitMQ? Skip. That's a tool before the problem: it sounds smart, and it's a red flag. [→] How many daily users, and how many messages each? Ask. It decides whether you need one server or hundreds. [→] Can I build it as microservices? Skip. That's an architecture decision, not a requirement. Decide it later, for a reason.</aside>
+</section>
+
+<!-- 20 -->
+<section class="slide">
+  <span class="kicker">Screenshot this</span>
+  <h2>Seven questions for any prompt</h2>
+  <table>
+    <tbody>
+      <tr><td><b>Users</b></td><td>Who uses it? Web, mobile, other services?</td></tr>
+      <tr><td><b>Core actions</b></td><td>The 2–3 must-haves. What's out of scope?</td></tr>
+      <tr><td><b>Scale</b></td><td>Users per day? Actions each? Reads vs writes?</td></tr>
+      <tr><td><b>Quality</b></td><td>Fast, always up, or always correct: which matters most?</td></tr>
+      <tr><td><b>Never-happen rule</b></td><td>What must never go wrong?</td></tr>
+      <tr><td><b>Data lifetime</b></td><td>Does data expire? History or audit needed?</td></tr>
+      <tr><td><b>Constraints</b></td><td>Regions, deadlines, existing systems, budget?</td></tr>
+    </tbody>
+  </table>
+  <aside class="notes">Seven questions for any prompt; take a screenshot. Users. Core actions, and what's out of scope. Scale, including the read-to-write ratio. Quality: fast, always up, or always correct, and which one wins. The never-happen rule. Data lifetime. And constraints, like regions or existing systems. In a real interview, spend five to eight minutes here, then write the agreed scope on the board before you draw anything.</aside>
+</section>
+
+<!-- 21 -->
+<section class="slide" data-chapter="Try it in the lab">
+  <span class="kicker">Live demo · free interactive course</span>
+  <h2>Switch on a requirement, watch the box appear</h2>
+  <div class="card accent" style="max-width:1500px"><p class="big">Course → Session 1 → <b>Requirements</b> → "Every requirement adds a box"<br><span class="muted mono" style="font-size:32px">rizwan3659.github.io/system-design-interview-course/#s01-m2</span></p></div>
+  <aside class="notes">Let me show you this in the lab. [CUT TO SCREEN RECORDING: follow production.md "Live demo", about 45 seconds.] This is the requirements lab from the free course. It starts with one server and one database. First, let me break it: the email provider takes ten seconds, and every sign-up waits. Now switch on "send a welcome email": a queue and a worker appear, and the same failure is handled. Switch on "never lose data" and kill the database: the replica takes over. Each requirement adds exactly one part, and each part handles exactly one failure. Try it yourself; the link is in the description.</aside>
+</section>
+
+<!-- 22 -->
+<section class="slide" data-chapter="Your turn">
+  <div class="seg blue">Interviewer mode</div>
+  <div class="ask"><span>Interviewer</span><p>"Actually, it's <b>2,000</b> users, not 10 million."<br>What do you remove, and what do you keep?</p></div>
+  <div class="pause" data-step="1">⏸ Pause. Answer in the comments.</div>
+  <div class="row">
+    <div class="card bad" data-step="2" style="flex:1"><span><span class="tag red">Remove</span></span><p>Extra servers beyond two · the cache · the CDN (probably)</p></div>
+    <div class="card good" data-step="3" style="flex:1"><span><span class="tag green">Keep</span></span><p>Replica + backups · the email queue · object storage for photos</p></div>
+  </div>
+  <aside class="notes">Your turn. Halfway through, the interviewer says: actually, it's two thousand users, not ten million. What do you remove, and what do you keep? [→] Pause and answer, or put it in the comments. [→] Remove what was there for scale: most of the servers, though two is still sensible for availability, the cache, and probably the CDN. [→] But keep the replica and backups, because "never lose a photo" didn't change. Keep the email queue, because a slow provider still shouldn't block sign-up. And keep object storage, because photos are still big. Scale requirements come and go. Durability and availability stay, even for a tiny app. Saying that out loud is exactly what interviewers want to hear.</aside>
+</section>
+
+<!-- 23 -->
+<section class="slide" data-chapter="What's next" style="justify-content:center">
+  <span class="kicker">Next in System Design From Zero</span>
+  <h2>"10 million users ≈ 2,300 requests a second."<br><span class="hl">Where did that number come from?</span></h2>
+  <div class="card accent" data-step="1" style="max-width:1400px"><span><span class="tag">Video 4</span></span><h3>How to estimate QPS, storage and bandwidth in 2 minutes</h3></div>
+  <p class="muted mono" data-step="2" style="font-size:30px">Free interactive course: link in the description</p>
+  <aside class="notes">One sentence in this video did a lot of work: ten million users is about two thousand three hundred requests a second, so one server isn't enough. [→] In the next video, we'll make that a skill: estimating requests per second, storage and bandwidth in about two minutes, and turning each number into a design decision. [→] If you want to try today's requirements lab, it's in the free interactive course, linked in the description. This is a complete system design series, and each video builds on the last, so if you want to follow it in order, subscribe, and I'll see you in the next one.</aside>
+</section>
+
+<div class="foot" id="foot"><span>System Design From Zero · Video 3</span><span></span></div>
+</div>
+
+<div id="chrome"><i></i></div><div id="num"></div>
+<div id="help">→ / Space next · ← back · P presenter notes · H hide bar · B blank · F full screen</div>
+<div id="black"></div>
+
+<script>
+(function(){
+const deck=document.getElementById('deck');
+const fit=()=>{const k=Math.min(innerWidth/1920,innerHeight/1080);deck.style.transform=`translate(-50%,-50%) scale(${k})`};
+addEventListener('resize',fit);fit();
+
+/* architecture diagrams */
+const N={client:[40,250,220,'Client','browser / app'],lb:[330,250,240,'Load balancer','picks a server'],app:[640,250,260,'App servers ×N','stateless'],
+ cache:[1010,60,330,'Cache','hot codes in memory'],db:[1010,250,330,'Database','source of truth'],replica:[1010,440,330,'Read replica','a copy, slightly behind'],
+ queue:[640,460,260,'Queue','click events'],worker:[290,460,300,'Analytics worker','counts in batches'],
+ cdn:[330,60,240,'CDN','images · video'],obj:[640,60,260,'Object storage','photo + video bytes']};
+const E=[['client','cdn','M150 250V115H330'],['cdn','obj','M570 115H640',1],['app','obj','M770 250V170'],['client','app','M260 305H640',0,'lb'],['client','lb','M260 305H330'],['lb','app','M570 305H640'],['app','db','M900 305H1010'],['app','cache','M900 280H955V115H1010'],['app','replica','M900 330H955V495H1010'],['db','replica','M1175 360V440',1],['app','queue','M770 360V460'],['queue','worker','M640 515H590']];
+let mk=0;
+document.querySelectorAll('.arch').forEach(el=>{const c=JSON.parse(el.dataset.arch),n=c.n,id='ah'+(mk++);const st=s=>s>0?` data-step="${s}"`:'';let s='';
+ E.forEach(([a,b,d,dash,unless])=>{if(n[a]==null||n[b]==null||(unless&&n[unless]!=null))return;s+=`<path class="edge${dash?' dash':''}" d="${d}" marker-end="url(#${id})"${st(Math.max(n[a],n[b]))}/>`});
+ Object.keys(n).forEach(k=>{const [x,y,w,nm0,sb0]=N[k],[nm,sb]=(c.lab&&c.lab[k])||[nm0,sb0];s+=`<g class="node"${st(n[k])}><rect x="${x}" y="${y}" width="${w}" height="110" rx="16"/><text class="nm" x="${x+w/2}" y="${y+50}">${nm}</text><text class="sb" x="${x+w/2}" y="${y+84}">${sb}</text></g>`});
+ [['hit',c.hit],['ok',c.ok]].forEach(([cls,m])=>{if(!m)return;Object.keys(m).forEach(k=>{const [x,y,w]=N[k];s+=`<g class="ring ${cls}"${st(m[k])}><rect x="${x-6}" y="${y-6}" width="${w+12}" height="122" rx="20"/></g>`})});
+ (c.p||[]).forEach(([d,step,col],i)=>{s+=`<g${st(step)}><circle r="13" fill="${col}"><animateMotion dur="2.2s" begin="${(i*0.35).toFixed(2)}s" repeatCount="indefinite" path="${d}"/></circle></g>`});
+ (c.l||[]).forEach(([t,x,y,step,col,until])=>{s+=`<text class="lbl" x="${x}" y="${y}" fill="${col}"${st(step)}${until?` data-until="${until}"`:''}>${t}</text>`});
+ el.innerHTML=`<svg viewBox="0 0 1380 610" role="img" aria-label="Architecture diagram"><defs><marker id="${id}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="ah" d="M0 0L10 5L0 10z"/></marker></defs>${s}</svg>`});
+
+/* deck state */
+const slides=[...document.querySelectorAll('.slide')];
+const maxStep=s=>Math.max(0,...[...s.querySelectorAll('[data-step]')].map(e=>+e.dataset.step));
+let si=0,st=0,t0=null;
+const words=s=>(s.querySelector('.notes')?.textContent||'').replace(/\[→\]/g,'').trim().split(/\s+/).filter(Boolean).length;
+const WPM=145;let acc=0;const at=slides.map(s=>{const a=acc;acc+=words(s)/WPM*60+2;return a});
+let chapter='';const chap=slides.map(s=>(chapter=s.dataset.chapter||chapter));
+const mmss=x=>Math.floor(x/60)+':'+String(Math.floor(x%60)).padStart(2,'0');
+const h=parseInt(location.hash.slice(1));if(h>0&&h<=slides.length)si=h-1;
+if(/final/.test(location.search)){st=maxStep(slides[si]);document.body.classList.add('clean');document.getElementById('help').remove()}  /* ?final#N previews slide N fully built */
+let notesWin=null;
+function render(){slides.forEach((s,i)=>s.classList.toggle('active',i===si));const s=slides[si];
+ s.querySelectorAll('[data-step]').forEach(e=>e.classList.toggle('pending',+e.dataset.step>st));
+ s.querySelectorAll('[data-until]').forEach(e=>{if(st>=+e.dataset.until)e.classList.add('pending');else if(!e.dataset.step||+e.dataset.step<=st)e.classList.remove('pending')});
+ document.querySelector('#chrome i').style.width=((si+1)/slides.length*100)+'%';
+ document.getElementById('num').textContent=`${si+1}/${slides.length} · build ${st}/${maxStep(s)}`;
+ document.querySelector('#foot span:last-child').textContent=chap[si];
+ try{history.replaceState(null,'','#'+(si+1))}catch(e){}
+ drawNotes()}
+function next(){if(t0==null)t0=Date.now();const m=maxStep(slides[si]);if(st<m)st++;else if(si<slides.length-1){si++;st=0}render()}
+function prev(){if(st>0)st--;else if(si>0){si--;st=maxStep(slides[si])}render()}
+
+/* presenter notes window (P) */
+function drawNotes(){if(!notesWin||notesWin.closed)return;const d=notesWin.document,s=slides[si];
+ const raw=(s.querySelector('.notes')?.innerHTML||'').split('[→]');
+ const html=raw.map((part,i)=>`<span class="${i<st?'done':i===st?'now':'later'}">${part}</span>`).join('<b class="cue">→</b>');
+ d.getElementById('meta').textContent=`Slide ${si+1}/${slides.length} · ${chap[si]} · build ${st}/${maxStep(s)}`;
+ d.getElementById('txt').innerHTML=html;
+ d.getElementById('next').textContent=si<slides.length-1?'Next slide: '+(slides[si+1].querySelector('h1,h2,.q')?.textContent||'').trim():'Last slide';
+ d.getElementById('target').textContent='Target '+mmss(at[si]);}
+function openNotes(){notesWin=window.open('','sd-notes','width=760,height=900');if(!notesWin)return;const d=notesWin.document;d.open();
+ d.write(`<!doctype html><meta charset="utf-8"><title>Presenter notes</title><style>body{margin:0;background:#111;color:#ddd;font:26px/1.55 "IBM Plex Sans",Segoe UI,sans-serif;padding:24px 28px}#meta,#next{font:15px Consolas,monospace;color:#8a96aa}#bar{display:flex;justify-content:space-between;gap:12px;align-items:baseline}#clock{font:30px Consolas,monospace;color:#f2b84b}#target{font:15px Consolas,monospace;color:#8a96aa}.done{color:#666}.now{color:#fff}.later{color:#9aa8bf}.cue{color:#6f9fff;margin:0 6px}#txt{margin:18px 0}</style><div id="bar"><span id="meta"></span><span><span id="clock">0:00</span> <span id="target"></span></span></div><div id="txt"></div><div id="next"></div><p style="font-size:14px;color:#666">Bright text = say now. Blue arrow = press → on the slides window. Keys work here too.</p>`);d.close();
+ d.addEventListener('keydown',key);drawNotes();}
+setInterval(()=>{if(notesWin&&!notesWin.closed&&t0!=null)notesWin.document.getElementById('clock').textContent=mmss((Date.now()-t0)/1000)},500);
+
+function key(e){const k=e.key;
+ if(['ArrowRight','PageDown',' ','Enter'].includes(k)){e.preventDefault();next()}
+ else if(['ArrowLeft','PageUp','Backspace'].includes(k)){e.preventDefault();prev()}
+ else if(k==='Home'){si=0;st=0;render()} else if(k==='End'){si=slides.length-1;st=maxStep(slides[si]);render()}
+ else if(k==='p'||k==='P')openNotes();
+ else if(k==='h'||k==='H')document.body.classList.toggle('clean');
+ else if(k==='b'||k==='B')document.body.classList.toggle('blank');
+ else if(k==='f'||k==='F'){if(!document.fullscreenElement)document.documentElement.requestFullscreen?.().catch(()=>{});else document.exitFullscreen?.()}
+ else if(k==='r'||k==='R'){t0=Date.now()}}
+addEventListener('keydown',key);
+deck.addEventListener('click',next);
+render();
+})();
+</script>
+</body>
+</html>

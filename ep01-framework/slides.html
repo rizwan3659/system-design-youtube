@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Video 2 · How to Approach Any System Design Interview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: fixed 1920x1080 stage scaled to the window; one slide visible; elements with data-step build in on → */
+:root{
+  --bg:#0f1726; --panel:#16213a; --line:#2a3854; --grid:rgba(111,159,255,.06);
+  --ink:#eef2f8; --muted:#9aa8bf; --accent:#6f9fff; --accent-soft:rgba(111,159,255,.16);
+  --marker:#ff7c68; --marker-soft:rgba(255,124,104,.16); --good:#4fc48d; --good-soft:rgba(79,196,141,.16);
+  --warn:#f2b84b; --warn-soft:rgba(242,184,75,.16);
+  --f-display:"Familjen Grotesk","Segoe UI",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",Consolas,monospace;
+  color-scheme:dark;
+}
+html,body{margin:0;height:100%;background:#000;overflow:hidden}
+*{box-sizing:border-box}
+#deck{position:absolute;left:50%;top:50%;width:1920px;height:1080px;transform-origin:center;background:var(--bg);color:var(--ink);font-family:var(--f-body);overflow:hidden;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:48px 48px}
+.slide{position:absolute;inset:0;padding:96px 128px;display:none;flex-direction:column;gap:40px}
+.slide.active{display:flex}
+.notes{display:none}
+[data-step]{transition:opacity .45s ease,transform .45s ease}
+.pending{opacity:0!important;transform:translateY(22px)}
+svg .pending{transform:none}
+@media (prefers-reduced-motion:reduce){[data-step]{transition:none}}
+
+h1,h2,h3{font-family:var(--f-display);margin:0;line-height:1.08;text-wrap:balance}
+h1{font-size:118px;font-weight:700;letter-spacing:-.02em}
+h2{font-size:80px;font-weight:700;letter-spacing:-.015em}
+h3{font-size:48px;font-weight:600}
+p{margin:0}
+.kicker{font-family:var(--f-mono);font-size:30px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.lead{font-size:46px;line-height:1.35;color:var(--muted);max-width:1500px}
+.big{font-size:44px;line-height:1.4}
+.muted{color:var(--muted)}
+.hl{color:var(--warn)}
+.ok{color:var(--good)}
+.bad{color:var(--marker)}
+code,.mono{font-family:var(--f-mono)}
+.row{display:flex;gap:40px;align-items:stretch}
+.col{display:flex;flex-direction:column;gap:28px}
+.card{background:var(--panel);border:2px solid var(--line);border-radius:20px;padding:36px 40px;display:flex;flex-direction:column;gap:18px}
+.card.accent{border-color:var(--accent);background:var(--accent-soft)}
+.card.bad{border-color:var(--marker);background:var(--marker-soft)}
+.card.good{border-color:var(--good);background:var(--good-soft)}
+.card h3{font-size:44px}
+.card p,.card li{font-size:36px;line-height:1.4}
+ul.list{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:26px}
+ul.list li{font-size:44px;line-height:1.3;display:flex;gap:24px;align-items:baseline}
+ul.list li b.n{font-family:var(--f-mono);color:var(--accent);font-weight:500;min-width:56px}
+.tag{display:inline-block;font-family:var(--f-mono);font-size:26px;padding:6px 16px;border-radius:8px;background:var(--accent-soft);color:var(--accent)}
+.tag.red{background:var(--marker-soft);color:var(--marker)} .tag.green{background:var(--good-soft);color:var(--good)} .tag.amber{background:var(--warn-soft);color:var(--warn)}
+.foot{position:absolute;left:128px;right:128px;bottom:56px;display:flex;justify-content:space-between;font-family:var(--f-mono);font-size:24px;color:var(--muted)}
+
+/* step strip */
+.steps5{display:grid;grid-template-columns:repeat(5,1fr);gap:24px}
+.step5{background:var(--panel);border:2px solid var(--line);border-radius:20px;padding:30px 28px;display:flex;flex-direction:column;gap:14px;min-height:340px}
+.step5 .num{font-family:var(--f-mono);font-size:30px;color:var(--accent)}
+.step5 h3{font-size:44px}
+.step5 p{font-size:30px;line-height:1.35;color:var(--muted)}
+.step5 .t{margin-top:auto;font-family:var(--f-mono);font-size:26px;color:var(--warn)}
+.step5.on{border-color:var(--accent);background:var(--accent-soft)}
+
+/* estimate lines */
+.eq{display:grid;grid-template-columns:1fr auto;gap:22px 48px;align-items:baseline;font-size:46px}
+.eq .r{font-family:var(--f-mono);color:var(--warn);text-align:right}
+.eq .l small{color:var(--muted);font-size:32px}
+.callout{border-left:8px solid var(--warn);background:var(--warn-soft);padding:28px 36px;border-radius:0 16px 16px 0;font-size:44px;line-height:1.35}
+.callout.green{border-color:var(--good);background:var(--good-soft)}
+
+/* table */
+table{border-collapse:collapse;width:100%;font-size:36px}
+th,td{text-align:left;padding:22px 26px;border-bottom:2px solid var(--line);vertical-align:top}
+th{font-family:var(--f-mono);font-size:26px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:500}
+td code{font-size:34px;color:var(--accent)}
+
+/* prompt card */
+.prompt{align-self:center;margin-top:60px;background:var(--panel);border:3px solid var(--accent);border-radius:28px;padding:70px 90px;text-align:center;display:flex;flex-direction:column;gap:30px;max-width:1500px}
+.prompt .q{font-family:var(--f-display);font-size:96px;font-weight:700}
+.prompt .url{font-family:var(--f-mono);font-size:40px;color:var(--muted)}
+.prompt .url b{color:var(--good);font-weight:500}
+
+/* architecture diagram */
+.arch svg{width:100%;max-width:1180px;height:auto;display:block;margin:0 auto}
+.caps{display:flex;gap:24px;justify-content:center;flex-wrap:wrap}
+.cap{font-size:34px;padding:16px 28px;border-radius:14px;border:2px solid var(--line);background:var(--panel)}
+.cap.bad{border-color:var(--marker);color:var(--marker)}.cap.good{border-color:var(--good);color:var(--good)}.cap.warn{border-color:var(--warn);color:var(--warn)}
+.arch .node rect{fill:var(--panel);stroke:var(--muted);stroke-width:3}
+.arch .node .nm{fill:var(--ink);font-family:var(--f-display);font-size:34px;font-weight:600;text-anchor:middle}
+.arch .node .sb{fill:var(--muted);font-family:var(--f-body);font-size:24px;text-anchor:middle}
+.arch .edge{stroke:var(--muted);stroke-width:3;fill:none}
+.arch .edge.dash{stroke-dasharray:10 8}
+.arch .ah{fill:var(--muted)}
+.arch .ring rect{fill:none;stroke-width:6}
+.arch .ring.hit rect{stroke:var(--marker);fill:var(--marker-soft)}
+.arch .ring.ok rect{stroke:var(--good);fill:var(--good-soft)}
+.arch .lbl{font-family:var(--f-mono);font-size:28px}
+
+/* chrome (hide with H while recording) */
+#chrome{position:fixed;left:0;right:0;bottom:0;height:5px;background:rgba(255,255,255,.08);z-index:5}
+#chrome i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
+#num{position:fixed;right:14px;bottom:12px;font:13px var(--f-mono);color:#7d8aa3;z-index:5}
+body.clean #chrome,body.clean #num{display:none}
+#help{position:fixed;left:16px;bottom:14px;font:13px var(--f-body);color:#7d8aa3;z-index:5}
+body.clean #help{display:none}
+#black{position:fixed;inset:0;background:#000;display:none;z-index:9}
+body.blank #black{display:block}
+</style>
+</head>
+<body>
+<div id="deck">
+
+<!-- 1 -->
+<section class="slide" data-chapter="Intro" style="justify-content:center">
+  <span class="kicker">System Design From Zero · Video 2</span>
+  <h1>How to answer <span class="hl">any</span><br>system design question</h1>
+  <p class="lead">The 5-step framework, with a full worked example.</p>
+  <aside class="notes">Last video, we watched one app grow from a hundred users to a million, and break five times on the way. In an interview, you have to do that out loud, in forty-five minutes, starting from a one-line prompt, while someone keeps changing the requirements. Most candidates lose this round in the first five minutes, before they draw a single box. So in this video: one five-step process you can use on any system design question, and then we'll run it on a URL shortener from scratch.</aside>
+</section>
+
+<!-- 2 -->
+<section class="slide">
+  <span class="kicker">Why the first 5 minutes matter</span>
+  <h2>Same prompt. Two candidates.</h2>
+  <div class="row" style="flex:1">
+    <div class="card bad" data-step="1" style="flex:1">
+      <span><span class="tag red">Candidate A</span></span>
+      <h3>Starts drawing</h3>
+      <p class="mono" style="font-size:32px;line-height:1.7">Load balancer · Kafka · Redis ·<br>microservices · sharding · CDN ·<br>12 boxes in 2 minutes</p>
+    </div>
+    <div class="card good" data-step="2" style="flex:1">
+      <span><span class="tag green">Candidate B</span></span>
+      <h3>Asks 4 questions first</h3>
+      <p style="font-size:34px;line-height:1.6">Who uses it?<br>How many links a day?<br>What matters most?<br>What must never go wrong?</p>
+    </div>
+  </div>
+  <div class="callout green" data-step="3">B scores higher. The interviewer can see <b>why</b> every box exists.</div>
+  <aside class="notes">Here's why the first five minutes matter. Picture two candidates who get the same prompt: design a URL shortener. Candidate A grabs the marker and starts drawing. Load balancer, Kafka, Redis, microservices, sharding. Twelve boxes in two minutes. [→] Candidate B asks four questions first. Who uses it? How many links a day? What matters most? And what must never go wrong? [→] Candidate B gets the higher score. Not because A's boxes are wrong, but because the interviewer can't tell why any of them are there.</aside>
+</section>
+
+<!-- 3 -->
+<section class="slide">
+  <span class="kicker">What the interviewer is grading</span>
+  <h2>Four things. Not the "right" architecture.</h2>
+  <ul class="list">
+    <li data-step="1"><b class="n">01</b><span>Breaking a vague problem into parts</span></li>
+    <li data-step="2"><b class="n">02</b><span>Reasoning from requirements and numbers, not tool names</span></li>
+    <li data-step="3"><b class="n">03</b><span>Seeing trade-offs: every choice costs something</span></li>
+    <li data-step="4"><b class="n">04</b><span>Adapting when the requirements change</span></li>
+  </ul>
+  <div class="callout" data-step="5">A complete, reasoned design beats a perfect one you never finish.</div>
+  <aside class="notes">So what is the interviewer actually grading? Four things. [→] One: can you break a vague problem into parts. [→] Two: do you reason from requirements, using numbers, instead of just naming technologies. [→] Three: do you see trade-offs. Every choice costs something. [→] And four: can you adapt when the requirements change, because they will change. [→] Notice what's not on this list. There is no single right architecture. A complete, reasoned design beats a perfect one you never finish.</aside>
+</section>
+
+<!-- 4 -->
+<section class="slide" data-chapter="The 5-step framework">
+  <span class="kicker">The framework</span>
+  <h2>Five steps, in this order</h2>
+  <div class="steps5">
+    <div class="step5" data-step="1"><span class="num">STEP 1</span><h3>Clarify</h3><p>Users, must-haves, scale, the never-happen rule</p><span class="t">5–8 min</span></div>
+    <div class="step5" data-step="2"><span class="num">STEP 2</span><h3>Interactions</h3><p>What can users do? Write the APIs</p><span class="t">~5 min</span></div>
+    <div class="step5" data-step="3"><span class="num">STEP 3</span><h3>Data</h3><p>What is stored, and how is it read?</p><span class="t">5–7 min</span></div>
+    <div class="step5" data-step="4"><span class="num">STEP 4</span><h3>Simple design</h3><p>Smallest thing that works; trace a request</p><span class="t">~10 min</span></div>
+    <div class="step5" data-step="5"><span class="num">STEP 5</span><h3>Challenge</h3><p>Break it, fix it, name the cost</p><span class="t">10–15 min</span></div>
+  </div>
+  <aside class="notes">Here's the framework. Five steps. [→] Step one, clarify the problem: about five to eight minutes. [→] Step two, define the interactions: what users can actually do, written as API calls. [→] Step three, identify the data: what you store, and how it's read. [→] Step four, draw a simple design: the smallest thing that works, and trace a request through it. [→] And step five, challenge and improve: break your own design, fix it, and say what each fix costs. Let's run all five on a real example.</aside>
+</section>
+
+<!-- 5 -->
+<section class="slide" style="justify-content:center">
+  <span class="kicker" style="text-align:center">The example</span>
+  <div class="prompt">
+    <span class="q">"Design a URL shortener."</span>
+    <span class="url" data-step="1">https://my-very-long-site.com/articles/2026/how-to-…<br>↓<br><b>sho.rt/x7Kp2aQ</b></span>
+  </div>
+  <aside class="notes">The prompt: design a URL shortener. Like bit.ly. [→] You paste a long link, you get a short one, and anyone who opens the short link gets redirected to the long one. It sounds simple, which is exactly why interviewers like it. There's a lot hiding underneath.</aside>
+</section>
+
+<!-- 6 -->
+<section class="slide" data-chapter="Step 1: Clarify">
+  <span class="kicker">Step 1 · Clarify</span>
+  <h2>Ask before you draw</h2>
+  <table>
+    <thead><tr><th style="width:40%">Question</th><th>Assumed answer</th></tr></thead>
+    <tbody>
+      <tr data-step="1"><td>Who uses it?</td><td>Public users, plus apps via an API</td></tr>
+      <tr data-step="2"><td>Must-haves?</td><td>Create a short link · redirect <span class="muted">(alias, clicks: nice to have)</span></td></tr>
+      <tr data-step="3"><td>How much traffic?</td><td><b class="hl">1 M</b> new links/day · <b class="hl">100 M</b> redirects/day</td></tr>
+      <tr data-step="4"><td>What matters most?</td><td>Redirects fast and almost always up</td></tr>
+      <tr data-step="5"><td>What must <b>never</b> happen?</td><td class="bad">A short link sends someone to the wrong URL</td></tr>
+    </tbody>
+  </table>
+  <aside class="notes">Step one: clarify. Don't draw anything yet. Ask. [→] Who uses this? Let's say the public, plus other apps through an API. [→] What are the must-haves? Create a short link, and redirect. Custom aliases and click counts are nice to have. [→] How much traffic? Let's assume one million new links a day, and a hundred million redirects a day. [→] What matters most? Redirects must be fast and almost always available. [→] And the most important question: what must never go wrong? A short link must never send someone to the wrong URL.</aside>
+</section>
+
+<!-- 7 -->
+<section class="slide">
+  <span class="kicker">Step 1 · Write it on the board</span>
+  <h2>The agreed scope</h2>
+  <div class="row">
+    <div class="card good" data-step="1" style="flex:1"><h3>In</h3><p>Create a link<br>Redirect<br>Expiry</p></div>
+    <div class="card" data-step="2" style="flex:1"><h3 class="muted">Out (for now)</h3><p class="muted">Analytics<br>Custom domains</p></div>
+  </div>
+  <div class="card bad" data-step="3"><h3>Never-happen rule</h3><p>A short link must never point to the wrong URL.</p></div>
+  <aside class="notes">Now write the agreed scope on the board. [→] In: create, redirect, and expiry. [→] Out, for now: analytics and custom domains. [→] And write the never-happen rule where everyone can see it. This takes thirty seconds, and it anchors the rest of the interview. When you make a decision later, you point back at this board.</aside>
+</section>
+
+<!-- 8 -->
+<section class="slide" data-chapter="Quick estimate">
+  <span class="kicker">Step 1 · Quick estimate</span>
+  <h2>Does one machine survive this?</h2>
+  <div class="eq">
+    <span class="l" data-step="1">100 M redirects ÷ 86,400 s <small>(seconds in a day)</small></span><span class="r" data-step="1">≈ 1,160 / s</span>
+    <span class="l" data-step="2">Peak ≈ 3 × average</span><span class="r" data-step="2">≈ 3,500 / s</span>
+    <span class="l" data-step="3">Writes: 1 M ÷ 86,400 s</span><span class="r" data-step="3">≈ 12 / s</span>
+    <span class="l" data-step="4">Storage: 1 M × 365 × 5 years × 500 B</span><span class="r" data-step="4">≈ 1 TB</span>
+  </div>
+  <div class="callout" data-step="5"><b>Read-heavy key lookup.</b> Reads are 100× writes. This decides the design.</div>
+  <aside class="notes">Next, a quick estimate. Not exact math: just enough to decide whether one machine is enough. [→] A day has about eighty-six thousand seconds. A hundred million redirects a day is about eleven hundred and sixty per second, on average. [→] Plan for peak. Say three times that: about three and a half thousand per second. [→] Writes are tiny. A million a day is about twelve per second. [→] Storage: a million links a day, times three sixty-five, times five years, times about five hundred bytes, is roughly one terabyte. [→] So what did we learn? This is a read-heavy key lookup. Reads are a hundred times writes. Remember that. It decides the design.</aside>
+</section>
+
+<!-- 9 -->
+<section class="slide" data-chapter="Step 2: Interactions">
+  <span class="kicker">Step 2 · Interactions</span>
+  <h2>Write the actions as API calls</h2>
+  <table>
+    <thead><tr><th>Call</th><th>Returns</th></tr></thead>
+    <tbody>
+      <tr data-step="1"><td><code>POST /links {longUrl, alias?, expiresAt?}</code></td><td>short code + short URL</td></tr>
+      <tr data-step="2"><td><code>GET /{code}</code></td><td>redirect, or 404</td></tr>
+      <tr data-step="3"><td><code>DELETE /links/{code}</code></td><td>owner only</td></tr>
+    </tbody>
+  </table>
+  <div class="row" data-step="4">
+    <div class="card" style="flex:1"><h3>301 permanent</h3><p>Browsers cache it: <span class="ok">fast, cheap</span><br><span class="bad">no click data, can't change target</span></p></div>
+    <div class="card" style="flex:1"><h3>302 temporary</h3><p>Every click reaches you: <span class="ok">analytics, editable</span><br><span class="bad">more traffic</span></p></div>
+  </div>
+  <aside class="notes">Step two: interactions. Write the actions as API calls. [→] POST slash links, with the long URL and an optional alias and expiry. It returns the short code. [→] GET slash code, which redirects. [→] And DELETE, for the owner. [→] One small detail interviewers love: which redirect code? A 301 is permanent, so browsers cache it. Faster and cheaper, but you stop seeing clicks, and you can never change the target. A 302 is temporary, so every click comes back to you. Neither one is right. Pick one, and say why.</aside>
+</section>
+
+<!-- 10 -->
+<section class="slide" data-chapter="Step 3: Data">
+  <span class="kicker">Step 3 · Data</span>
+  <h2>One table, one hot read</h2>
+  <div class="card accent" data-step="1">
+    <h3 class="mono" style="font-size:40px">Link</h3>
+    <p class="mono" style="font-size:36px"><b class="hl">shortCode</b> (primary key) · longUrl · ownerId · createdAt · expiresAt</p>
+  </div>
+  <div class="callout" data-step="2">Most frequent read: <b>shortCode → longUrl</b>. A key lookup.</div>
+  <p class="big" data-step="3">7 characters of <span class="mono">[a–z A–Z 0–9]</span> = 62<sup>7</sup> ≈ <b class="hl">3.5 trillion</b> codes</p>
+  <aside class="notes">Step three: the data. [→] We have one main entity: a Link. The short code, the long URL, the owner, created-at and expires-at. [→] The most frequent read is: given a short code, find the long URL. That's a key lookup, so the short code is the primary key. [→] How long should the code be? Seven characters from letters and digits gives sixty-two to the power of seven: about three and a half trillion codes. Way more than we'll ever need.</aside>
+</section>
+
+<!-- 11 -->
+<section class="slide">
+  <span class="kicker">Step 3 · A real decision</span>
+  <h2>How do you generate the code?</h2>
+  <table>
+    <thead><tr><th>Option</th><th>Good</th><th>Cost</th></tr></thead>
+    <tbody>
+      <tr data-step="1"><td>Hash the URL, take 7 chars</td><td class="ok">No coordination</td><td class="bad">Collisions: check and retry</td></tr>
+      <tr data-step="2"><td>One counter → base 62</td><td class="ok">No collisions</td><td class="bad">Bottleneck; guessable codes</td></tr>
+      <tr data-step="3"><td>ID ranges per server (1,000 each)</td><td class="ok">No collisions, no hot spot</td><td class="bad">Crashed server wastes its range</td></tr>
+    </tbody>
+  </table>
+  <div class="callout green" data-step="4">Any option is fine. Naming the <b>cost</b> is what scores.</div>
+  <aside class="notes">Then there's a real decision: how do you generate the code? [→] Option one: hash the long URL and take seven characters. No coordination needed, but two URLs can collide, so you have to check and retry. [→] Option two: a single counter, encoded in base sixty-two. No collisions, but one counter is a bottleneck, and the codes are guessable. [→] Option three: hand each server a range of IDs, say a thousand at a time. No collisions, no hot spot, and if a server crashes, you only waste its range. [→] Any of these is acceptable. What scores is naming the cost of the one you pick.</aside>
+</section>
+
+<!-- 12 -->
+<section class="slide" data-chapter="Step 4: Simple design">
+  <span class="kicker">Step 4 · Simple design</span>
+  <h2>The smallest thing that works</h2>
+  <div class="arch" data-arch='{"n":{"client":1,"lb":2,"app":3,"db":4},"p":[["M150 305H1175",5,"var(--accent)"]],"l":[["trace one request out loud",640,215,5,"var(--accent)"]]}'></div>
+  <aside class="notes">Step four: draw the simplest design that works. [→] A client. [→] A load balancer. [→] A few app servers. Stateless, so any server can handle any request. [→] And one database. [→] Now trace a request out loud. The user opens the short link, the load balancer picks a server, the server looks up the code in the database, and returns a redirect. That's it. This works on day one. Resist adding anything the requirements didn't ask for.</aside>
+</section>
+
+<!-- 13 -->
+<section class="slide">
+  <span class="kicker">Step 4 · Justify every box</span>
+  <h2>Reads are 100× writes → cache</h2>
+  <div class="arch" data-arch='{"n":{"client":0,"lb":0,"app":0,"db":0,"cache":1},"p":[["M150 305H930V115H1175",2,"var(--good)"],["M150 305H1175",3,"var(--warn)"]],"l":[["1. check cache",960,215,2,"var(--good)"],["2. only on a miss",960,400,3,"var(--warn)"]]}'></div>
+  <aside class="notes">But our estimate said reads are a hundred times writes, and a few links get most of the clicks. That's a requirement asking for a cache. [→] So now, a redirect checks the cache first. [→] Only on a miss does it go to the database. Notice how I justified it. Not "add Redis because it's fast", but "reads dominate and they're skewed, so cache them". The cost? The cache can serve stale data, and it's one more thing that can fail.</aside>
+</section>
+
+<!-- 14 -->
+<section class="slide" data-chapter="Step 5: Challenge">
+  <span class="kicker">Step 5 · Challenge · "The database dies"</span>
+  <h2>Single point of failure → replica</h2>
+  <div class="arch" data-arch='{"n":{"client":0,"lb":0,"app":0,"cache":0,"db":0,"replica":2},"hit":{"db":1},"ok":{"replica":2},"l":[]}'></div>
+  <div class="caps"><span class="cap bad" data-step="1">Single point of failure</span><span class="cap good" data-step="2">Replica keeps redirects alive</span><span class="cap warn" data-step="3">Cost: brief failover, slight lag</span></div>
+  <aside class="notes">Step five: challenge your own design. Don't wait for the interviewer to do it. First: what if the database dies? [→] Right now, everything fails, because it's a single point of failure. [→] Fix: add a read replica. If the primary dies, redirects keep working from the cache and the replica, and we promote the replica to primary. [→] The cost: creates fail for a short time during failover, and the replica can be slightly behind.</aside>
+</section>
+
+<!-- 15 -->
+<section class="slide">
+  <span class="kicker">Step 5 · Challenge · "A link goes viral"</span>
+  <h2>One hot key → the cache saves you</h2>
+  <div class="arch" data-arch='{"n":{"client":0,"lb":0,"app":0,"cache":0,"db":0,"replica":0},"ok":{"cache":1},"p":[["M150 305H930V115H1175",1,"var(--good)"],["M150 285H930V95H1175",1,"var(--good)"],["M150 325H930V135H1175",1,"var(--good)"]],"l":[]}'></div>
+  <div class="caps"><span class="cap good" data-step="1">Millions of hits on 1 key → served from memory</span><span class="cap bad" data-step="2">Sharding does NOT fix a hot key</span></div>
+  <aside class="notes">Second: one link goes viral. Millions of hits on a single key. [→] The cache is what saves you here. The hot code is served from memory, and the database barely notices. [→] And here's a trap: some candidates say "shard the database". But sharding doesn't help a hot key, because one key lives on one shard. Matching the fix to the actual problem is exactly what interviewers look for.</aside>
+</section>
+
+<!-- 16 -->
+<section class="slide">
+  <span class="kicker">Step 5 · Requirement change · "Count clicks"</span>
+  <h2>Slow side work → queue</h2>
+  <div class="arch" data-arch='{"n":{"client":0,"lb":0,"app":0,"cache":0,"db":0,"replica":0,"queue":2,"worker":2},"hit":{"db":1},"p":[["M770 330V515H455",3,"var(--warn)"]],"l":[]}'></div>
+  <div class="caps"><span class="cap bad" data-step="1">Inline: DB writes 12 → 1,160 / s</span><span class="cap good" data-step="2">Queue: redirect returns at once</span><span class="cap warn" data-step="3">Cost: counts lag a few seconds</span></div>
+  <aside class="notes">Third, the interviewer changes the requirements: "we now want click counts". [→] If you write a row for every click inside the redirect, database writes jump from twelve a second to over a thousand, and every redirect gets slower. [→] Instead, drop a small click event on a queue and return immediately. [→] A worker counts them in batches. The cost: counts lag by a few seconds. Say that out loud, and ask if it's acceptable.</aside>
+</section>
+
+<!-- 17 -->
+<section class="slide">
+  <span class="kicker">Where we ended up</span>
+  <h2>Every box has a reason</h2>
+  <div class="arch" data-arch='{"n":{"client":0,"lb":0,"app":0,"cache":0,"db":0,"replica":0,"queue":0,"worker":0},"ok":{"cache":1,"replica":2,"queue":3},"l":[]}'></div>
+  <div class="caps"><span class="cap good" data-step="1">Cache: reads dominate</span><span class="cap good" data-step="2">Replica: no single point of failure</span><span class="cap good" data-step="3">Queue: new analytics need</span></div>
+  <aside class="notes">Here's where we ended up. And notice the story. Every box on this diagram is here because a requirement or a failure asked for it. [→] The cache, because reads dominate. [→] The replica, because the database was a single point of failure. [→] The queue, because of the new analytics requirement. That story is what you're really being graded on.</aside>
+</section>
+
+<!-- 18 -->
+<section class="slide" data-chapter="Mistakes to avoid">
+  <span class="kicker">Avoid these</span>
+  <h2>Four mistakes that cost offers</h2>
+  <ul class="list">
+    <li data-step="1"><b class="n bad">✕</b><span>Drawing before asking</span></li>
+    <li data-step="2"><b class="n bad">✕</b><span>Naming tools without reasons: "we'll use Kafka"</span></li>
+    <li data-step="3"><b class="n bad">✕</b><span>Starting huge instead of simple</span></li>
+    <li data-step="4"><b class="n bad">✕</b><span>Presenting choices as free</span></li>
+  </ul>
+  <aside class="notes">Four mistakes to avoid. [→] One: drawing before asking. [→] Two: naming tools without reasons, like "we'll use Kafka". [→] Three: starting with a huge architecture instead of the simplest thing that works. [→] And four: presenting choices as if they were free. Every choice costs something. Say what.</aside>
+</section>
+
+<!-- 19 -->
+<section class="slide">
+  <span class="kicker">Screenshot this</span>
+  <h2>The framework on one screen</h2>
+  <div class="steps5">
+    <div class="step5 on"><span class="num">1</span><h3>Clarify</h3><p>Users, scale, never-happen rule</p></div>
+    <div class="step5 on"><span class="num">2</span><h3>Interactions</h3><p>Write the APIs</p></div>
+    <div class="step5 on"><span class="num">3</span><h3>Data</h3><p>Entities, main read, riskiest write</p></div>
+    <div class="step5 on"><span class="num">4</span><h3>Simple design</h3><p>Smallest thing that works; trace it</p></div>
+    <div class="step5 on"><span class="num">5</span><h3>Challenge</h3><p>Break it, fix it, name the cost</p></div>
+  </div>
+  <aside class="notes">Here's the whole framework on one screen. Take a screenshot. Clarify: users, scale, and the never-happen rule. Interactions: write the APIs. Data: entities, the main read, and the riskiest write. Simple design: the smallest thing that works, then trace a request through it. And challenge: break it, fix it, and name the cost.</aside>
+</section>
+
+<!-- 20 -->
+<section class="slide" data-chapter="What's next" style="justify-content:center">
+  <span class="kicker">Practise it</span>
+  <h2>Free interactive course<br><span class="muted" style="font-size:56px">link in the description</span></h2>
+  <div class="card accent" data-step="1" style="max-width:1300px"><span><span class="tag">Next video</span></span><h3>Functional vs non-functional requirements</h3></div>
+  <aside class="notes">If you want to practise this, there's a free interactive course linked in the description, with labs where you can break this exact design yourself. [→] Step one was clarifying. In the next video, we go deeper: which questions to ask, and how each answer adds or removes a box from your design. This is a full system design series, so if you want to follow it in order, subscribe, and I'll see you there.</aside>
+</section>
+
+<div class="foot" id="foot"><span>System Design From Zero · Video 2</span><span></span></div>
+</div>
+
+<div id="chrome"><i></i></div><div id="num"></div>
+<div id="help">→ / Space next · ← back · P presenter notes · H hide bar · B blank · F full screen</div>
+<div id="black"></div>
+
+<script>
+(function(){
+const deck=document.getElementById('deck');
+const fit=()=>{const k=Math.min(innerWidth/1920,innerHeight/1080);deck.style.transform=`translate(-50%,-50%) scale(${k})`};
+addEventListener('resize',fit);fit();
+
+/* architecture diagrams */
+const N={client:[40,250,220,'Client','browser / app'],lb:[330,250,240,'Load balancer','picks a server'],app:[640,250,260,'App servers ×N','stateless'],
+ cache:[1010,60,330,'Cache','hot codes in memory'],db:[1010,250,330,'Database','source of truth'],replica:[1010,440,330,'Read replica','a copy, slightly behind'],
+ queue:[640,460,260,'Queue','click events'],worker:[290,460,300,'Analytics worker','counts in batches']};
+const E=[['client','lb','M260 305H330'],['lb','app','M570 305H640'],['app','db','M900 305H1010'],['app','cache','M900 280H955V115H1010'],['app','replica','M900 330H955V495H1010'],['db','replica','M1175 360V440',1],['app','queue','M770 360V460'],['queue','worker','M640 515H590']];
+let mk=0;
+document.querySelectorAll('.arch').forEach(el=>{const c=JSON.parse(el.dataset.arch),n=c.n,id='ah'+(mk++);const st=s=>s>0?` data-step="${s}"`:'';let s='';
+ E.forEach(([a,b,d,dash])=>{if(n[a]==null||n[b]==null)return;s+=`<path class="edge${dash?' dash':''}" d="${d}" marker-end="url(#${id})"${st(Math.max(n[a],n[b]))}/>`});
+ Object.keys(n).forEach(k=>{const [x,y,w,nm,sb]=N[k];s+=`<g class="node"${st(n[k])}><rect x="${x}" y="${y}" width="${w}" height="110" rx="16"/><text class="nm" x="${x+w/2}" y="${y+50}">${nm}</text><text class="sb" x="${x+w/2}" y="${y+84}">${sb}</text></g>`});
+ [['hit',c.hit],['ok',c.ok]].forEach(([cls,m])=>{if(!m)return;Object.keys(m).forEach(k=>{const [x,y,w]=N[k];s+=`<g class="ring ${cls}"${st(m[k])}><rect x="${x-6}" y="${y-6}" width="${w+12}" height="122" rx="20"/></g>`})});
+ (c.p||[]).forEach(([d,step,col],i)=>{s+=`<g${st(step)}><circle r="13" fill="${col}"><animateMotion dur="2.2s" begin="${(i*0.35).toFixed(2)}s" repeatCount="indefinite" path="${d}"/></circle></g>`});
+ (c.l||[]).forEach(([t,x,y,step,col])=>{s+=`<text class="lbl" x="${x}" y="${y}" fill="${col}"${st(step)}>${t}</text>`});
+ el.innerHTML=`<svg viewBox="0 0 1380 610" role="img" aria-label="Architecture diagram"><defs><marker id="${id}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="ah" d="M0 0L10 5L0 10z"/></marker></defs>${s}</svg>`});
+
+/* deck state */
+const slides=[...document.querySelectorAll('.slide')];
+const maxStep=s=>Math.max(0,...[...s.querySelectorAll('[data-step]')].map(e=>+e.dataset.step));
+let si=0,st=0,t0=null;
+const words=s=>(s.querySelector('.notes')?.textContent||'').replace(/\[→\]/g,'').trim().split(/\s+/).filter(Boolean).length;
+const WPM=145;let acc=0;const at=slides.map(s=>{const a=acc;acc+=words(s)/WPM*60+2;return a});
+let chapter='';const chap=slides.map(s=>(chapter=s.dataset.chapter||chapter));
+const mmss=x=>Math.floor(x/60)+':'+String(Math.floor(x%60)).padStart(2,'0');
+const h=parseInt(location.hash.slice(1));if(h>0&&h<=slides.length)si=h-1;
+if(/final/.test(location.search)){st=maxStep(slides[si]);document.body.classList.add('clean');document.getElementById('help').remove()}  /* ?final#N previews slide N fully built */
+let notesWin=null;
+function render(){slides.forEach((s,i)=>s.classList.toggle('active',i===si));const s=slides[si];
+ s.querySelectorAll('[data-step]').forEach(e=>e.classList.toggle('pending',+e.dataset.step>st));
+ document.querySelector('#chrome i').style.width=((si+1)/slides.length*100)+'%';
+ document.getElementById('num').textContent=`${si+1}/${slides.length} · build ${st}/${maxStep(s)}`;
+ document.querySelector('#foot span:last-child').textContent=chap[si];
+ try{history.replaceState(null,'','#'+(si+1))}catch(e){}
+ drawNotes()}
+function next(){if(t0==null)t0=Date.now();const m=maxStep(slides[si]);if(st<m)st++;else if(si<slides.length-1){si++;st=0}render()}
+function prev(){if(st>0)st--;else if(si>0){si--;st=maxStep(slides[si])}render()}
+
+/* presenter notes window (P) */
+function drawNotes(){if(!notesWin||notesWin.closed)return;const d=notesWin.document,s=slides[si];
+ const raw=(s.querySelector('.notes')?.innerHTML||'').split('[→]');
+ const html=raw.map((part,i)=>`<span class="${i<st?'done':i===st?'now':'later'}">${part}</span>`).join('<b class="cue">→</b>');
+ d.getElementById('meta').textContent=`Slide ${si+1}/${slides.length} · ${chap[si]} · build ${st}/${maxStep(s)}`;
+ d.getElementById('txt').innerHTML=html;
+ d.getElementById('next').textContent=si<slides.length-1?'Next slide: '+(slides[si+1].querySelector('h1,h2,.q')?.textContent||'').trim():'Last slide';
+ d.getElementById('target').textContent='Target '+mmss(at[si]);}
+function openNotes(){notesWin=window.open('','sd-notes','width=760,height=900');if(!notesWin)return;const d=notesWin.document;d.open();
+ d.write(`<!doctype html><meta charset="utf-8"><title>Presenter notes</title><style>body{margin:0;background:#111;color:#ddd;font:26px/1.55 "IBM Plex Sans",Segoe UI,sans-serif;padding:24px 28px}#meta,#next{font:15px Consolas,monospace;color:#8a96aa}#bar{display:flex;justify-content:space-between;gap:12px;align-items:baseline}#clock{font:30px Consolas,monospace;color:#f2b84b}#target{font:15px Consolas,monospace;color:#8a96aa}.done{color:#666}.now{color:#fff}.later{color:#9aa8bf}.cue{color:#6f9fff;margin:0 6px}#txt{margin:18px 0}</style><div id="bar"><span id="meta"></span><span><span id="clock">0:00</span> <span id="target"></span></span></div><div id="txt"></div><div id="next"></div><p style="font-size:14px;color:#666">Bright text = say now. Blue arrow = press → on the slides window. Keys work here too.</p>`);d.close();
+ d.addEventListener('keydown',key);drawNotes();}
+setInterval(()=>{if(notesWin&&!notesWin.closed&&t0!=null)notesWin.document.getElementById('clock').textContent=mmss((Date.now()-t0)/1000)},500);
+
+function key(e){const k=e.key;
+ if(['ArrowRight','PageDown',' ','Enter'].includes(k)){e.preventDefault();next()}
+ else if(['ArrowLeft','PageUp','Backspace'].includes(k)){e.preventDefault();prev()}
+ else if(k==='Home'){si=0;st=0;render()} else if(k==='End'){si=slides.length-1;st=maxStep(slides[si]);render()}
+ else if(k==='p'||k==='P')openNotes();
+ else if(k==='h'||k==='H')document.body.classList.toggle('clean');
+ else if(k==='b'||k==='B')document.body.classList.toggle('blank');
+ else if(k==='f'||k==='F'){if(!document.fullscreenElement)document.documentElement.requestFullscreen?.().catch(()=>{});else document.exitFullscreen?.()}
+ else if(k==='r'||k==='R'){t0=Date.now()}}
+addEventListener('keydown',key);
+deck.addEventListener('click',next);
+render();
+})();
+</script>
+</body>
+</html>

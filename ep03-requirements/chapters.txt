@@ -1,0 +1,14 @@
+0:00 Hook
+1:02 Two kinds of requirements
+2:23 Start simple
+3:12 #1: 10 million users
+4:28 #2: fast reads
+6:17 #3: never lose data
+6:59 #4: a 'simple' feature
+8:06 #5: photos worldwide
+8:50 Recap: sentences → boxes
+9:32 The never-happen rule
+10:46 Ask or skip?
+11:57 Try it in the lab
+12:43 Your turn
+13:32 What's next

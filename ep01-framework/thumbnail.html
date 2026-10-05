@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>EP01 thumbnail</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* 1280x720 YouTube thumbnail. ?v=a (5 STEPS) or ?v=b (DON'T DRAW YET). Render: headless Chrome screenshot, crop to 1280x720. */
+:root{--bg:#0f1726;--ink:#ffffff;--muted:#a9b6cc;--accent:#6f9fff;--hl:#ffc93c;--red:#ff5a46;--green:#4fc48d;--panel:#16213a}
+html,body{margin:0;background:#000}
+.t{width:1280px;height:720px;position:relative;overflow:hidden;background:radial-gradient(900px 600px at 85% 40%,#1e3a6e 0%,var(--bg) 60%);font-family:"Familjen Grotesk","Segoe UI",sans-serif;color:var(--ink);
+  background-color:var(--bg)}
+.grid{position:absolute;inset:0;background-image:linear-gradient(rgba(111,159,255,.08) 2px,transparent 2px),linear-gradient(90deg,rgba(111,159,255,.08) 2px,transparent 2px);background-size:64px 64px}
+.txt{position:absolute;left:64px;top:70px;display:flex;flex-direction:column;gap:6px}
+.big{font-size:230px;line-height:.9;color:var(--hl);letter-spacing:-.03em;text-shadow:0 8px 0 rgba(0,0,0,.35)}
+.mid{font-size:92px;line-height:1;letter-spacing:-.02em;text-shadow:0 6px 0 rgba(0,0,0,.35)}
+.sub{margin-top:18px;display:inline-block;align-self:flex-start;font-family:"IBM Plex Mono",monospace;font-size:34px;background:var(--accent);color:#08101f;padding:10px 22px;border-radius:12px}
+.box{position:absolute;width:250px;height:96px;border:5px solid var(--muted);border-radius:18px;background:var(--panel);display:grid;place-items:center;font-size:40px;color:var(--ink)}
+.x{position:absolute;font-size:170px;color:var(--red);font-family:"Familjen Grotesk",sans-serif;line-height:1;text-shadow:0 6px 0 rgba(0,0,0,.4)}
+.check{color:var(--green)}
+</style>
+</head>
+<body>
+<div class="t" id="a">
+  <div class="grid"></div>
+  <div class="txt"><span class="big">5 STEPS</span><span class="mid">to answer ANY</span><span class="mid">system design</span><span class="mid">question</span></div>
+  <div class="box" style="left:930px;top:120px;border-color:var(--green)">Cache</div>
+  <div class="box" style="left:930px;top:300px">Database</div>
+  <div class="box" style="left:930px;top:480px;border-color:var(--green)">Replica</div>
+  <svg style="position:absolute;left:820px;top:160px" width="120" height="420"><path d="M55 8V368M55 8H110M55 188H110M55 368H110" stroke="#a9b6cc" stroke-width="6" fill="none"/></svg>
+</div>
+
+<div class="t" id="b" style="display:none">
+  <div class="grid"></div>
+  <div class="txt" style="top:90px"><span class="mid" style="font-size:150px;color:var(--hl)">DON'T</span><span class="mid" style="font-size:150px;color:var(--hl)">DRAW YET</span><span class="mid" style="font-size:64px;margin-top:20px">System design interviews</span><span class="sub">ask these 4 questions first</span></div>
+  <div class="box" style="left:900px;top:110px;transform:rotate(-6deg)">Kafka</div>
+  <div class="box" style="left:980px;top:270px;transform:rotate(5deg)">Redis</div>
+  <div class="box" style="left:890px;top:430px;transform:rotate(-3deg)">Sharding</div>
+  <span class="x" style="left:1045px;top:232px">✕</span>
+</div>
+<script>if(/v=b/.test(location.search)){document.getElementById('a').style.display='none';document.getElementById('b').style.display='block'}</script>
+</body>
+</html>
